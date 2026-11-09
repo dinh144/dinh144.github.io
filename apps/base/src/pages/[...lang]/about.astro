@@ -1,0 +1,21 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPage } from '@blog/core/posts';
+import { localePaths } from '@blog/core/routes';
+import { render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const page = await getPage(locale, 'about');
+const rendered = page ? await render(page) : undefined;
+const Content = rendered?.Content;
+---
+
+<Layout locale={locale} title={page?.data.title ?? t(locale, 'nav.about')} description={page?.data.description}>
+  <article class="article-head">
+    <h1>{page?.data.title ?? t(locale, 'nav.about')}</h1>
+    <div class="prose">{Content && <Content />}</div>
+  </article>
+</Layout>

@@ -1,0 +1,169 @@
+---
+import type { Locale } from '@blog/core/i18n';
+import { SITE } from '@blog/core/site';
+import { CONCEPTS } from './concepts';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const other = locale === 'vi' ? 'en' : 'vi';
+const copy =
+  locale === 'vi'
+    ? {
+        title: 'Phòng thí nghiệm thiết kế',
+        lead: 'Bốn phiên bản của cùng một blog, cùng nội dung, cùng tính năng. Thử từng bản rồi chọn một.',
+        open: 'Mở',
+        admin: 'Quản trị nội dung',
+        switch: 'English',
+      }
+    : {
+        title: 'Design lab',
+        lead: 'Four versions of the same blog, same content, same features. Try each one, then pick one.',
+        open: 'Open',
+        admin: 'Content admin',
+        switch: 'Tiếng Việt',
+      };
+const prefix = locale === 'vi' ? '' : '/en';
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{copy.title} · {SITE.name}</title>
+    <meta name="description" content={copy.lead} />
+    <meta name="robots" content="noindex" />
+    <link rel="alternate" hreflang="vi" href={`${SITE.origin}/`} />
+    <link rel="alternate" hreflang="en" href={`${SITE.origin}/en/`} />
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --ink: #22201e;
+        --muted: #6a625c;
+        --rule: #d6cec0;
+        --accent: #a50e1a;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #120e0f;
+          --ink: #ede6dd;
+          --muted: #aba196;
+          --rule: #3a3233;
+          --accent: #e8707a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          17px/1.6 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 64px 20px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: baseline;
+      }
+      h1 {
+        font-size: clamp(36px, 6vw, 64px);
+        line-height: 1.05;
+        margin: 24px 0 16px;
+        letter-spacing: -0.02em;
+      }
+      p {
+        color: var(--muted);
+        max-width: 60ch;
+      }
+      a {
+        color: inherit;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 48px 0;
+        display: grid;
+        gap: 0;
+      }
+      li a {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px 24px;
+        padding: 24px 0;
+        border-top: 1px solid var(--rule);
+        text-decoration: none;
+      }
+      li:last-child a {
+        border-bottom: 1px solid var(--rule);
+      }
+      li strong {
+        font-size: 26px;
+      }
+      li span {
+        color: var(--muted);
+        flex: 1 1 320px;
+      }
+      li em {
+        font-style: normal;
+        color: var(--accent);
+        font-family: ui-monospace, monospace;
+        font-size: 14px;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+      }
+      footer {
+        font-size: 14px;
+        color: var(--muted);
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <strong>{SITE.name}</strong>
+        <a href={locale === 'vi' ? '/en/' : '/'} hreflang={other} lang={other}>
+          {copy.switch}
+        </a>
+      </header>
+      <h1>{copy.title}</h1>
+      <p>{copy.lead}</p>
+      <ul>
+        {CONCEPTS.map((c) => (
+          <li>
+            <a href={`/lab/${c.id}${prefix}/`}>
+              <strong>{c[locale].name}</strong>
+              <span>{c[locale].blurb}</span>
+              <em>/lab/{c.id}/ →</em>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <footer>
+        <a href="/admin/">{copy.admin}</a>
+        <a href={SITE.github}>GitHub</a>
+        <span>
+          {SITE.license.content} · {SITE.license.code}
+        </span>
+      </footer>
+    </main>
+  </body>
+</html>

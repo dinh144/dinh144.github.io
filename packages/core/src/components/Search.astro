@@ -1,0 +1,47 @@
+---
+/**
+ * Pagefind search UI. The index is built after `astro build` (pagefind --site dist),
+ * so in `astro dev` the box shows a note instead. Pagefind splits indexes by <html lang>,
+ * so each language only searches its own posts.
+ */
+import { t, type Locale } from '../i18n';
+import { BASE } from '../routes';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const bundle = `${BASE}/pagefind/`;
+---
+
+<div class="search" data-bundle={bundle} data-locale={locale}>
+  <link rel="stylesheet" href={`${bundle}pagefind-ui.css`} />
+  <div id="pagefind-search"></div>
+  <noscript>{t(locale, 'search.hint')}</noscript>
+</div>
+<script is:inline data-astro-rerun>
+  (function () {
+    var root = document.querySelector('.search');
+    if (!root) return;
+    var bundle = root.dataset.bundle;
+    function mount() {
+      // eslint-disable-next-line no-undef
+      new PagefindUI({
+        element: '#pagefind-search',
+        bundlePath: bundle,
+        showSubResults: true,
+        showImages: false,
+        resetStyles: false,
+      });
+    }
+    if (window.PagefindUI) return mount();
+    var s = document.createElement('script');
+    s.src = bundle + 'pagefind-ui.js';
+    s.onload = mount;
+    s.onerror = function () {
+      var el = document.getElementById('pagefind-search');
+      if (el) el.textContent = 'Search index not built (run a production build).';
+    };
+    document.head.appendChild(s);
+  })();
+</script>

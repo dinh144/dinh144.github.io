@@ -1,0 +1,109 @@
+---
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import Analytics from '@blog/core/components/Analytics.astro';
+import PrefsInit from '@blog/core/components/PrefsInit.astro';
+import Seo from '@blog/core/components/Seo.astro';
+import { otherLocale, t, type Locale } from '@blog/core/i18n';
+import { paths, switchLocale, unlocalize } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import { ClientRouter } from 'astro:transitions';
+import PrefsControls from '../components/PrefsControls.astro';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  published?: Date;
+  available?: Locale[];
+  /** Show the reading-mode toggle (article pages). */
+  reading?: boolean;
+  noindex?: boolean;
+}
+
+const { locale, reading = false, ...seo } = Astro.props;
+const here = unlocalize(Astro.url.pathname);
+const other = otherLocale(locale);
+const otherHref =
+  seo.available && !seo.available.includes(other) ? paths.home(other) : switchLocale(Astro.url.pathname, other);
+const nav = [
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts'), match: '/posts/' },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series'), match: '/series/' },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes'), match: '/notes/' },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links'), match: '/links/' },
+  { href: paths.about(locale), label: t(locale, 'nav.about'), match: '/about/' },
+];
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2316181d'/%3E%3C/svg%3E"
+    />
+    <PrefsInit />
+    <Seo locale={locale} {...seo} />
+    <ClientRouter />
+  </head>
+  <body>
+    <a class="skip" href="#main">
+      {locale === 'vi' ? 'Bỏ qua tới nội dung' : 'Skip to content'}
+    </a>
+    <div class="wrap">
+      <header class="site-header">
+        <a class="brand" href={paths.home(locale)}>
+          {SITE.name}
+        </a>
+        <nav class="nav" aria-label={locale === 'vi' ? 'Chính' : 'Main'}>
+          {nav.map((item) => (
+            <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        <div class="tools">
+          <a class="icon-btn" href={paths.search(locale)} aria-label={t(locale, 'nav.search')}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M20 20l-3.5-3.5"></path>
+            </svg>
+          </a>
+          <PrefsControls locale={locale} reading={reading} />
+          <a class="icon-btn" href={otherHref} hreflang={other} lang={other}>
+            {other.toUpperCase()}
+          </a>
+        </div>
+      </header>
+      <main id="main" data-pagefind-body>
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <span>{t(locale, 'footer.license', SITE.license)}</span>
+        <span>
+          <a href={paths.rss(locale)}>RSS</a> · <a href={paths.tags(locale)}>{t(locale, 'nav.tags')}</a> ·{' '}
+          <a href={SITE.github}>GitHub</a>
+        </span>
+      </footer>
+    </div>
+    <Analytics locale={locale} />
+    <script>
+      import { applyPrefs, watchSystemPrefs } from '@blog/core/client/preferences';
+      // ClientRouter swaps <html> attributes on navigation; re-apply the stored preferences.
+      document.addEventListener('astro:after-swap', () => applyPrefs());
+      watchSystemPrefs();
+    </script>
+  </body>
+</html>

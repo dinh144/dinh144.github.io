@@ -1,0 +1,30 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getSeriesList } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const list = await getSeriesList(locale);
+---
+
+<Layout locale={locale} title={t(locale, 'nav.series')}>
+  <h1 style="margin: 48px 0 8px">{t(locale, 'nav.series')}</h1>
+  {list.length ? (
+    <ol class="stream">
+      {list.map((series) => (
+        <li class="card">
+          <p class="kicker">{t(locale, 'series.parts', { n: series.parts.length })}</p>
+          <h2>
+            <a href={paths.series(locale, series.id)}>{series.title}</a>
+          </h2>
+          {series.description && <p>{series.description}</p>}
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <p>{t(locale, 'series.empty')}</p>
+  )}
+</Layout>

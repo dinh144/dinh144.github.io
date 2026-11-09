@@ -1,0 +1,95 @@
+# Sveltia CMS. Edits content/ in the repo; every theme reads the same files.
+# Translate button: Settings > Translator in the CMS, choose Google Gemini and paste your API key
+# (kept in your browser only).
+backend:
+  name: github
+  repo: dinh144/dinh144.github.io
+  branch: main
+  commit_messages:
+    create: 'content: create {{collection}} "{{slug}}"'
+    update: 'content: update {{collection}} "{{slug}}"'
+    delete: 'content: delete {{collection}} "{{slug}}"'
+    uploadMedia: 'content: upload "{{path}}"'
+    deleteMedia: 'content: delete "{{path}}"'
+
+site_url: https://dinh144.github.io
+locale: vi
+media_folder: content/media
+public_folder: /media
+
+i18n:
+  structure: multiple_folders
+  locales: [vi, en]
+  default_locale: vi
+
+collections:
+  - name: posts
+    label: Bài viết
+    label_singular: Bài
+    folder: content/posts
+    create: true
+    i18n: true
+    slug: '{{slug}}'
+    summary: '{{title}} · {{type}}'
+    sortable_fields: [date, title, type]
+    view_filters:
+      - { label: Bài viết, field: type, pattern: article }
+      - { label: TIL, field: type, pattern: note }
+      - { label: Liên kết, field: type, pattern: link }
+      - { label: Nháp, field: draft, pattern: true }
+    fields:
+      - { name: title, label: Tiêu đề, widget: string, i18n: true }
+      - { name: description, label: Mô tả ngắn, widget: text, required: false, i18n: true }
+      - { name: date, label: Ngày đăng, widget: datetime, time_format: false, i18n: duplicate }
+      - { name: updated, label: Ngày cập nhật, widget: datetime, time_format: false, required: false, i18n: duplicate }
+      - name: type
+        label: Loại bài
+        widget: select
+        default: article
+        i18n: duplicate
+        options:
+          - { label: Bài viết, value: article }
+          - { label: Ghi chú (TIL), value: note }
+          - { label: Liên kết, value: link }
+      - name: series
+        label: Thuộc chuỗi
+        widget: object
+        required: false
+        collapsed: true
+        i18n: duplicate
+        fields:
+          - { name: id, label: Chuỗi, widget: relation, collection: series, value_field: '{{slug}}', search_fields: [vi.title], display_fields: [vi.title], required: false }
+          - { name: part, label: Phần số, widget: number, value_type: int, min: 1, required: false }
+      - { name: tags, label: Chủ đề, widget: list, required: false, i18n: duplicate }
+      - { name: link, label: Đường link (bài liên kết), widget: string, required: false, i18n: duplicate }
+      - { name: cover, label: Ảnh bìa, widget: image, required: false, i18n: duplicate }
+      - { name: coverAlt, label: Mô tả ảnh bìa, widget: string, required: false, i18n: true }
+      - { name: draft, label: Bản nháp (không đăng), widget: boolean, default: false, i18n: duplicate }
+      - { name: comments, label: Cho bình luận, widget: boolean, default: true, i18n: duplicate }
+      - { name: aiDraft, label: Bản dịch AI chưa duyệt, widget: boolean, default: false, required: false, i18n: true }
+      - { name: body, label: Nội dung, widget: markdown, i18n: true }
+
+  - name: series
+    label: Chuỗi bài
+    folder: content/series
+    extension: yml
+    format: yaml
+    create: true
+    i18n:
+      structure: single_file
+    slug: '{{slug}}'
+    identifier_field: title
+    summary: '{{vi.title}}'
+    fields:
+      - { name: title, label: Tên chuỗi, widget: string, i18n: true }
+      - { name: description, label: Mô tả, widget: text, required: false, i18n: true }
+
+  - name: pages
+    label: Trang
+    folder: content/pages
+    create: false
+    i18n: true
+    fields:
+      - { name: title, label: Tiêu đề, widget: string, i18n: true }
+      - { name: description, label: Mô tả, widget: text, required: false, i18n: true }
+      - { name: body, label: Nội dung, widget: markdown, i18n: true }

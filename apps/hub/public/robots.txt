@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+Allow: /
+
+Sitemap: https://dinh144.github.io/lab/base/sitemap-index.xml

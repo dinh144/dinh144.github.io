@@ -1,0 +1,23 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import type { Post, TagInfo } from '@blog/core/posts';
+import { tagPaths } from '@blog/core/routes';
+import PostCard from '../../../components/PostCard.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => tagPaths();
+
+const { locale, tag, posts } = Astro.props as { locale: Locale; tag: TagInfo; posts: Post[] };
+---
+
+<Layout locale={locale} title={`#${tag.name}`}>
+  <p class="kicker" style="margin-top: 48px">
+    {t(locale, 'tags.title')}
+  </p>
+  <h1 style="margin: 4px 0 8px">#{tag.name}</h1>
+  <ol class="stream">
+    {posts.map((post) => (
+      <PostCard post={post} />
+    ))}
+  </ol>
+</Layout>

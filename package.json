@@ -1,0 +1,22 @@
+{
+  "name": "dinh144-blog",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22.23.4"
+  },
+  "scripts": {
+    "dev": "pnpm --filter base dev",
+    "dev:hub": "pnpm --filter hub dev",
+    "build": "node scripts/build-all.mjs",
+    "check": "pnpm -r --filter './apps/*' exec astro check",
+    "verify": "node scripts/verify-theme.mjs",
+    "format": "prettier --write \"apps/**/*.{astro,ts,mjs,css}\" \"packages/**/*.{astro,ts}\" \"scripts/**/*.mjs\""
+  },
+  "devDependencies": {
+    "playwright": "1.65.0",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.2"
+  }
+}

@@ -1,0 +1,87 @@
+---
+/**
+ * GoatCounter (cookieless) + Microsoft Clarity (cookies, so it waits for consent from
+ * visitors whose time zone is in Europe). Off unless PUBLIC_ANALYTICS=on and the ids are set.
+ * Works with Astro's ClientRouter: counts a page view on every astro:page-load.
+ */
+import { t, type Locale } from '../i18n';
+import { SITE } from '../site';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const enabled = import.meta.env.PUBLIC_ANALYTICS === 'on';
+const goat = enabled && SITE.analytics.goatcounterCode;
+const clarity = enabled && SITE.analytics.clarityId;
+---
+
+{goat && (
+  <>
+    <script is:inline>
+      window.goatcounter = { no_onload: true };
+    </script>
+    <script
+      is:inline
+      async
+      src="https://gc.zgo.at/count.js"
+      data-goatcounter={`https://${SITE.analytics.goatcounterCode}.goatcounter.com/count`}
+    ></script>
+    <script is:inline data-astro-rerun>
+      (function count() {
+        if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: location.pathname });
+        else setTimeout(count, 300);
+      })();
+    </script>
+  </>
+)}
+{clarity && (
+  <div id="clarity-consent" hidden data-id={SITE.analytics.clarityId} transition:persist>
+    <p>{t(locale, 'consent.text')}</p>
+    <button type="button" data-consent="yes">
+      {t(locale, 'consent.yes')}
+    </button>
+    <button type="button" data-consent="no">
+      {t(locale, 'consent.no')}
+    </button>
+  </div>
+)}
+{clarity && <script is:inline>
+  (function () {
+    var box = document.getElementById('clarity-consent');
+    if (!box || window.__clarityInit) return;
+    window.__clarityInit = true;
+    var id = box.dataset.id;
+    function load() {
+      (function (c, l, a, r, i, t, y) {
+        c[a] =
+          c[a] ||
+          function () {
+            (c[a].q = c[a].q || []).push(arguments);
+          };
+        t = l.createElement(r);
+        t.async = 1;
+        t.src = 'https://www.clarity.ms/tag/' + i;
+        y = l.getElementsByTagName(r)[0];
+        y.parentNode.insertBefore(t, y);
+      })(window, document, 'clarity', 'script', id);
+    }
+    var choice = null;
+    try {
+      choice = localStorage.getItem('blog:clarity');
+    } catch (e) {}
+    var eu = /^Europe\//.test(Intl.DateTimeFormat().resolvedOptions().timeZone || '');
+    if (choice === 'yes' || (!eu && choice !== 'no')) return load();
+    if (choice === 'no') return;
+    box.hidden = false;
+    box.addEventListener('click', function (e) {
+      var v = e.target && e.target.dataset ? e.target.dataset.consent : null;
+      if (!v) return;
+      try {
+        localStorage.setItem('blog:clarity', v);
+      } catch (err) {}
+      box.hidden = true;
+      if (v === 'yes') load();
+    });
+  })();
+</script>}

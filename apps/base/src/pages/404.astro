@@ -1,0 +1,18 @@
+---
+import { t } from '@blog/core/i18n';
+import { paths } from '@blog/core/routes';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout locale="vi" title={t('vi', 'notfound.title')} noindex>
+  <section style="padding: 80px 0">
+    <h1>{t('vi', 'notfound.title')}</h1>
+    <p lang="en">{t('en', 'notfound.title')}</p>
+    <p>
+      <a href={paths.home('vi')}>{t('vi', 'notfound.back')}</a> ·{' '}
+      <a href={paths.home('en')} lang="en">
+        {t('en', 'notfound.back')}
+      </a>
+    </p>
+  </section>
+</Layout>

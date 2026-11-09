@@ -1,0 +1,26 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPostsBySection, type Section } from '@blog/core/posts';
+import { sectionPaths } from '@blog/core/routes';
+import PostCard from '../../../components/PostCard.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => sectionPaths();
+
+const { locale, section } = Astro.props as { locale: Locale; section: Section };
+const posts = await getPostsBySection(locale, section);
+const title = t(locale, section === 'posts' ? 'nav.posts' : section === 'notes' ? 'nav.notes' : 'nav.links');
+---
+
+<Layout locale={locale} title={title}>
+  <h1 style="margin: 48px 0 8px">{title}</h1>
+  {posts.length ? (
+    <ol class="stream">
+      {posts.map((post) => (
+        <PostCard post={post} />
+      ))}
+    </ol>
+  ) : (
+    <p>{t(locale, 'list.empty')}</p>
+  )}
+</Layout>

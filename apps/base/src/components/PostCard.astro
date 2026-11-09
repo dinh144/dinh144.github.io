@@ -1,0 +1,35 @@
+---
+import { formatDate, t } from '@blog/core/i18n';
+import type { Post } from '@blog/core/posts';
+import { paths } from '@blog/core/routes';
+
+interface Props {
+  post: Post;
+  heading?: 'h2' | 'h3';
+}
+const { post, heading = 'h2' } = Astro.props;
+const { data } = post;
+const Heading = heading;
+const kicker =
+  data.type === 'note'
+    ? t(post.locale, 'type.note')
+    : data.type === 'link'
+      ? `${t(post.locale, 'type.link')}${data.link ? ` · ${new URL(data.link).hostname}` : ''}`
+      : data.series
+        ? `${t(post.locale, 'type.series')} · ${data.series.part}`
+        : t(post.locale, 'type.article');
+---
+
+<li class="card" data-type={data.type} data-series={data.series?.id}>
+  <p class="kicker">{kicker}</p>
+  <Heading>
+    <a href={paths.post(post)}>{data.title}</a>
+  </Heading>
+  {data.type !== 'note' && data.description && <p>{data.description}</p>}
+  <p class="meta">
+    <time datetime={data.date.toISOString()}>{formatDate(data.date, post.locale, 'numeric')}</time>
+    {data.type === 'article' && <span>{t(post.locale, 'post.minutes', { n: post.minutes })}</span>}
+    {data.tags.length > 0 && <span>{data.tags.map((tag) => `#${tag}`).join(' ')}</span>}
+    {post.fallback && <span lang="vi">VI</span>}
+  </p>
+</li>

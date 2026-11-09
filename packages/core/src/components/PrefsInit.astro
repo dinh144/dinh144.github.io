@@ -1,0 +1,29 @@
+---
+/**
+ * Inline, render-blocking on purpose: sets data-theme / data-reading / data-sound / data-motion
+ * on <html> before first paint, so there is no flash of the wrong theme or of effects
+ * that reading mode should suppress. Keep in sync with client/preferences.ts.
+ */
+---
+
+<script is:inline>
+  (function () {
+    var p = { theme: 'system', reading: false, sound: false };
+    try {
+      var raw = localStorage.getItem('blog:prefs');
+      if (raw) p = Object.assign(p, JSON.parse(raw));
+    } catch (e) {}
+    var mm = window.matchMedia
+      ? function (q) {
+          return window.matchMedia(q).matches;
+        }
+      : function () {
+          return false;
+        };
+    var r = document.documentElement;
+    r.dataset.theme = p.theme === 'system' ? (mm('(prefers-color-scheme: dark)') ? 'dark' : 'light') : p.theme;
+    r.dataset.reading = p.reading ? 'on' : 'off';
+    r.dataset.sound = p.sound ? 'on' : 'off';
+    r.dataset.motion = mm('(prefers-reduced-motion: reduce)') || p.reading ? 'reduce' : 'full';
+  })();
+</script>

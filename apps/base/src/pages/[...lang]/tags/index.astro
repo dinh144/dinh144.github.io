@@ -1,0 +1,27 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, tagsOf } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const tags = tagsOf(await getPosts(locale));
+---
+
+<Layout locale={locale} title={t(locale, 'tags.title')}>
+  <h1 style="margin: 48px 0 8px">{t(locale, 'tags.title')}</h1>
+  <ul class="tags">
+    {tags.map((tag) => (
+      <li>
+        <a href={paths.tag(locale, tag.name)}>
+          #{tag.name}{' '}
+          <span class="meta" style="display:inline">
+            {tag.count}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>

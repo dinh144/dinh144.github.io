@@ -1,0 +1,24 @@
+{
+  "name": "base",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference theme: every route and feature, plain styling. Concept themes start from a copy of this app.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && pagefind --site dist",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.4",
+    "@blog/core": "workspace:*",
+    "astro": "7.4.7",
+    "katex": "0.19.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "pagefind": "1.6.0",
+    "typescript": "6.0.3"
+  }
+}

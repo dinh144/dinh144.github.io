@@ -1,0 +1,26 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import type { SeriesInfo } from '@blog/core/posts';
+import { seriesPaths } from '@blog/core/routes';
+import PostCard from '../../../components/PostCard.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => seriesPaths();
+
+const { locale, series } = Astro.props as { locale: Locale; series: SeriesInfo };
+---
+
+<Layout locale={locale} title={series.title} description={series.description}>
+  <header class="article-head">
+    <p class="kicker">
+      {t(locale, 'nav.series')} · {t(locale, 'series.parts', { n: series.parts.length })}
+    </p>
+    <h1>{series.title}</h1>
+    {series.description && <p class="dek">{series.description}</p>}
+  </header>
+  <ol class="stream">
+    {series.parts.map((post) => (
+      <PostCard post={post} />
+    ))}
+  </ol>
+</Layout>

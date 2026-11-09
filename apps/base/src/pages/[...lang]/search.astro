@@ -1,0 +1,18 @@
+---
+import Search from '@blog/core/components/Search.astro';
+import { t, type Locale } from '@blog/core/i18n';
+import { localePaths } from '@blog/core/routes';
+import Layout from '../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+---
+
+<Layout locale={locale} title={t(locale, 'search.title')} noindex>
+  <h1 style="margin: 48px 0 8px">{t(locale, 'search.title')}</h1>
+  <p class="meta" style="margin-bottom: 24px">
+    {t(locale, 'search.hint')}
+  </p>
+  <Search locale={locale} />
+</Layout>

@@ -1,0 +1,5 @@
+content/
+pnpm-lock.yaml
+tools/claude/skills/
+**/dist/
+**/.astro/

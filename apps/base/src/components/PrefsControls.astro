@@ -1,0 +1,98 @@
+---
+/**
+ * Theme, reading-mode and sound toggles. Reading mode only shows on article pages.
+ * State lives in @blog/core/client/preferences (data attributes on <html>).
+ */
+import { t, type Locale } from '@blog/core/i18n';
+
+interface Props {
+  locale: Locale;
+  reading?: boolean;
+}
+const { locale, reading = false } = Astro.props;
+---
+
+<div class="tools" data-prefs>
+  <button
+    type="button"
+    class="icon-btn"
+    data-pref="theme"
+    aria-label={t(locale, 'prefs.theme')}
+    title={t(locale, 'prefs.theme')}
+  >
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      aria-hidden="true"
+    >
+      <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path>
+    </svg>
+  </button>
+  <button
+    type="button"
+    class="icon-btn"
+    data-pref="sound"
+    aria-pressed="false"
+    aria-label={t(locale, 'prefs.sound')}
+    title={t(locale, 'prefs.sound')}
+  >
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      aria-hidden="true"
+    >
+      <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+      <path d="M16 9a4 4 0 0 1 0 6"></path>
+    </svg>
+  </button>
+  {reading && (
+    <button
+      type="button"
+      class="icon-btn"
+      data-pref="reading"
+      aria-pressed="false"
+      title={t(locale, 'prefs.readingHint')}
+    >
+      {t(locale, 'prefs.reading')}
+    </button>
+  )}
+</div>
+<script>
+  import { readPrefs, toggleTheme, togglePref } from '@blog/core/client/preferences';
+  import { tick } from '@blog/core/client/sound';
+
+  function sync() {
+    const prefs = readPrefs();
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-pref="sound"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(prefs.sound)));
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-pref="reading"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(prefs.reading)));
+  }
+
+  function bind() {
+    document.querySelectorAll<HTMLButtonElement>('[data-pref]').forEach((button) => {
+      if (button.dataset.bound) return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', () => {
+        const kind = button.dataset.pref;
+        if (kind === 'theme') toggleTheme();
+        if (kind === 'sound' || kind === 'reading') togglePref(kind);
+        sync();
+        tick();
+      });
+    });
+    sync();
+  }
+
+  document.addEventListener('astro:page-load', bind);
+</script>

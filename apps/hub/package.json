@@ -1,0 +1,16 @@
+{
+  "name": "hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Site root during the design lab: links to every concept theme, plus the Sveltia CMS at /admin and uploaded media at /media.",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@blog/core": "workspace:*",
+    "astro": "7.4.7"
+  }
+}

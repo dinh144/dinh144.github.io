@@ -1,0 +1,41 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import PostCard from '../../components/PostCard.astro';
+import Layout from '../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const posts = await getPosts(locale);
+const tagline =
+  locale === 'vi'
+    ? 'Ghi chép về lập trình, máy học và những gì mình học được mỗi tuần.'
+    : 'Notes on programming, machine learning and what I learn each week.';
+---
+
+<Layout locale={locale} title={SITE.name} description={tagline}>
+  <section style="padding: 56px 0 24px">
+    <h1 style="font-size: clamp(32px, 5vw, 56px); margin: 0; max-width: 860px">{tagline}</h1>
+  </section>
+  <nav class="filters" aria-label={t(locale, 'nav.all')}>
+    <a href={paths.home(locale)} aria-current="page">
+      {t(locale, 'nav.all')}
+    </a>
+    <a href={paths.section(locale, 'posts')}>{t(locale, 'nav.posts')}</a>
+    <a href={paths.seriesList(locale)}>{t(locale, 'nav.series')}</a>
+    <a href={paths.section(locale, 'notes')}>{t(locale, 'nav.notes')}</a>
+    <a href={paths.section(locale, 'links')}>{t(locale, 'nav.links')}</a>
+  </nav>
+  {posts.length ? (
+    <ol class="stream">
+      {posts.map((post) => (
+        <PostCard post={post} />
+      ))}
+    </ol>
+  ) : (
+    <p>{t(locale, 'list.empty')}</p>
+  )}
+</Layout>
