@@ -9,7 +9,7 @@
   6. 360 px header is 3 rows (141 px) → put the metronome inside `.tools` below 400 px.
   7. Minor: footnote ref/backref hit areas (pad via pseudo-element), tempo button name omits "096", TOC wraps at 1024.
   8. Creativity +1: neighbouring titles should yield when one stretches (brief asks for it). Content: per-locale tag names.
-- 2nd passes PAUSED mid-work, each as an unverified WIP commit (local branches; push them when the network allows):
+- 2nd passes PAUSED mid-work, each as an unverified WIP commit (branches pushed to origin):
   - constellation: branch `worktree-agent-a974c1cb6145d03f5` @ `7c3805a` (includes the older WIP 9007161; was rewriting the stage section of app.ts, added apps/constellation/scripts/check-labels.mjs).
   - signal: branch `worktree-agent-a6726bb07f1d52959` @ `7c018f1` (engine/shaders/effects/CSS edits started; was about to apply the CSS fixes).
   - ink: branch `worktree-agent-a0edc04ceaa9a799a` @ `8211a55` (WIP 91c9ebf merged with main; ink-field.ts + CSS edits; was reviewing early screenshots).
