@@ -1,0 +1,184 @@
+---
+import '@fontsource-variable/mona-sans/standard.css';
+import '@fontsource-variable/inter/index.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import monaLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-standard-normal.woff2?url';
+import monaViet from '@fontsource-variable/mona-sans/files/mona-sans-vietnamese-standard-normal.woff2?url';
+import Analytics from '@blog/core/components/Analytics.astro';
+import PrefsInit from '@blog/core/components/PrefsInit.astro';
+import Seo from '@blog/core/components/Seo.astro';
+import { otherLocale, t, type Locale } from '@blog/core/i18n';
+import { paths, switchLocale, unlocalize } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import { ClientRouter } from 'astro:transitions';
+import Metronome from '../components/Metronome.astro';
+import PrefsControls from '../components/PrefsControls.astro';
+import { c } from '../lib/copy';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  published?: Date;
+  available?: Locale[];
+  /** Show the reading-mode toggle and the reading playhead (article pages). */
+  reading?: boolean;
+  noindex?: boolean;
+  /** Page kind, used by the motion layer to pick its choreography. */
+  kind?: 'home' | 'list' | 'article' | 'page';
+}
+
+const { locale, reading = false, kind = 'page', ...seo } = Astro.props;
+const here = unlocalize(Astro.url.pathname);
+const other = otherLocale(locale);
+const otherHref =
+  seo.available && !seo.available.includes(other) ? paths.home(other) : switchLocale(Astro.url.pathname, other);
+const nav = [
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts'), match: '/posts/' },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series'), match: '/series/' },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes'), match: '/notes/' },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links'), match: '/links/' },
+  { href: paths.about(locale), label: t(locale, 'nav.about'), match: '/about/' },
+];
+// Page swap: the old page drops out fast, the new one settles in; shared titles morph on their own.
+const pageSwap = {
+  forwards: {
+    old: { name: 'rh-out', duration: '160ms', easing: 'cubic-bezier(0.4, 0, 1, 1)', fillMode: 'both' },
+    new: { name: 'rh-in', duration: '420ms', easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fillMode: 'both' },
+  },
+  backwards: {
+    old: { name: 'rh-out', duration: '160ms', easing: 'cubic-bezier(0.4, 0, 1, 1)', fillMode: 'both' },
+    new: { name: 'rh-in-back', duration: '420ms', easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fillMode: 'both' },
+  },
+};
+const wordmark = [...SITE.name];
+---
+
+<!doctype html>
+<html lang={locale} data-kind={kind}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0d10" media="(prefers-color-scheme: dark)" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230E1116'/%3E%3Crect x='6' y='8' width='4' height='16' fill='%233B3BE8'/%3E%3Crect x='14' y='12' width='4' height='12' fill='%23fff'/%3E%3Crect x='22' y='16' width='4' height='8' fill='%23fff'/%3E%3C/svg%3E"
+    />
+    <link rel="preload" as="font" type="font/woff2" href={monaLatin} crossorigin />
+    {locale === 'vi' && <link rel="preload" as="font" type="font/woff2" href={monaViet} crossorigin />}
+    <PrefsInit />
+    <Seo locale={locale} {...seo} />
+    <ClientRouter />
+  </head>
+  <body>
+    <a class="skip" href="#main">
+      {c(locale, 'skip')}
+    </a>
+    <div class="columns" aria-hidden="true">
+      <div class="frame grid">
+        {Array.from({ length: 12 }, () => (
+          <span></span>
+        ))}
+      </div>
+    </div>
+    <header class="site-header" transition:name="site-header" transition:animate="none">
+      <div class="frame grid header-grid">
+        <a class="brand" href={paths.home(locale)} aria-label={`${SITE.name}, ${t(locale, 'nav.all')}`}>
+          <span class="brand-mark" aria-hidden="true">
+            <i></i>
+            <i></i>
+            <i></i>
+          </span>
+          <span class="brand-name">{SITE.name}</span>
+        </a>
+        <nav class="nav" aria-label={c(locale, 'mainNav')}>
+          <ul>
+            {nav.map((item) => (
+              <li>
+                <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <Metronome locale={locale} />
+        <div class="tools">
+          <a class="icon-btn" href={paths.search(locale)} aria-label={t(locale, 'nav.search')}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              aria-hidden="true"
+            >
+              <circle cx="10.5" cy="10.5" r="6.5"></circle>
+              <path d="M15.5 15.5 21 21"></path>
+            </svg>
+          </a>
+          <PrefsControls locale={locale} reading={reading} />
+          <a class="icon-btn lang-btn" href={otherHref} hreflang={other} lang={other} aria-label={c(other, 'langName')}>
+            {other.toUpperCase()}
+          </a>
+        </div>
+      </div>
+    </header>
+    {(kind === 'home' || kind === 'list') && (
+      <div class="lens" aria-hidden="true">
+        <span></span>
+        <span></span>
+      </div>
+    )}
+    {reading && (
+      <div class="playhead" aria-hidden="true">
+        <div class="playhead-track">
+          <span class="playhead-fill"></span>
+        </div>
+      </div>
+    )}
+    <main id="main" data-pagefind-body transition:animate={pageSwap}>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="frame">
+        <p class="wordmark" aria-hidden="true">
+          {wordmark.map((ch) => (
+            <span class="wm-ch">{ch}</span>
+          ))}
+        </p>
+        <div class="grid footer-grid">
+          <p class="footer-fine">{c(locale, 'fine')}.</p>
+          <p class="footer-license">{t(locale, 'footer.license', SITE.license)}</p>
+          <ul class="footer-links">
+            <li>
+              <a href={paths.rss(locale)}>RSS</a>
+            </li>
+            <li>
+              <a href={paths.tags(locale)}>{t(locale, 'nav.tags')}</a>
+            </li>
+            <li>
+              <a href={SITE.github}>GitHub</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+    <Analytics locale={locale} />
+    <script>
+      import { applyPrefs, watchSystemPrefs } from '@blog/core/client/preferences';
+      import { boot } from '../scripts/boot';
+      // ClientRouter swaps <html> attributes on navigation; re-apply the stored preferences.
+      document.addEventListener('astro:after-swap', () => applyPrefs());
+      watchSystemPrefs();
+      boot();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import ScoreRow from '../../components/ScoreRow.astro';
+import Layout from '../../layouts/Layout.astro';
+import { c } from '../../lib/copy';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const posts = await getPosts(locale);
+const tagline = c(locale, 'tagline');
+const filters = [
+  { href: paths.home(locale), label: t(locale, 'nav.all'), current: true },
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts') },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series') },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes') },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links') },
+];
+---
+
+<Layout locale={locale} title={SITE.name} description={tagline} kind="home">
+  <section class="hero frame grid">
+    <h1 class="hero-title" data-kin="hero">
+      {tagline}
+    </h1>
+    <div class="ruler" aria-hidden="true">
+      {Array.from({ length: 16 }, (_, i) => <i data-step={i} class={i % 4 === 0 ? 'down' : undefined}></i>)}
+    </div>
+  </section>
+  <div class="frame score-head grid">
+    <p class="timesig" aria-hidden="true"><span>4</span><span>4</span></p>
+    <p class="score-label">
+      <span>{c(locale, 'score')}</span>
+      <span class="score-count">{c(locale, 'entries', { n: posts.length })}</span>
+    </p>
+    <nav class="filters" aria-label={t(locale, 'nav.all')}>
+      <ul>
+        {filters.map((f) => (
+          <li>
+            <a href={f.href} aria-current={f.current ? 'page' : undefined}>
+              {f.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+  <div class="frame">
+    {posts.length ? (
+      <ol class="score" data-score>
+        {posts.map((post, i) => (
+          <ScoreRow post={post} n={posts.length - i} />
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'list.empty')}</p>
+    )}
+  </div>
+</Layout>

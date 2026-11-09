@@ -1,0 +1,30 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPostsBySection, type Section } from '@blog/core/posts';
+import { sectionPaths } from '@blog/core/routes';
+import PageHead from '../../../components/PageHead.astro';
+import ScoreRow from '../../../components/ScoreRow.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { c } from '../../../lib/copy';
+
+export const getStaticPaths = () => sectionPaths();
+
+const { locale, section } = Astro.props as { locale: Locale; section: Section };
+const posts = await getPostsBySection(locale, section);
+const title = t(locale, section === 'posts' ? 'nav.posts' : section === 'notes' ? 'nav.notes' : 'nav.links');
+---
+
+<Layout locale={locale} title={title} kind="list">
+  <PageHead title={title} note={c(locale, 'score')} count={c(locale, 'entries', { n: posts.length })} />
+  <div class="frame">
+    {posts.length ? (
+      <ol class="score" data-score>
+        {posts.map((post, i) => (
+          <ScoreRow post={post} n={posts.length - i} />
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'list.empty')}</p>
+    )}
+  </div>
+</Layout>

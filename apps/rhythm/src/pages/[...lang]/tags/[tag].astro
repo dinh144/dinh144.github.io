@@ -1,0 +1,28 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import type { Post, TagInfo } from '@blog/core/posts';
+import { paths, tagPaths } from '@blog/core/routes';
+import PageHead from '../../../components/PageHead.astro';
+import ScoreRow from '../../../components/ScoreRow.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { c } from '../../../lib/copy';
+
+export const getStaticPaths = () => tagPaths();
+
+const { locale, tag, posts } = Astro.props as { locale: Locale; tag: TagInfo; posts: Post[] };
+---
+
+<Layout locale={locale} title={`#${tag.name}`} kind="list">
+  <PageHead title={`#${tag.name}`} count={c(locale, 'entries', { n: posts.length })}>
+    <p class="page-back">
+      <a href={paths.tags(locale)}>{t(locale, 'tags.title')}</a>
+    </p>
+  </PageHead>
+  <div class="frame">
+    <ol class="score" data-score>
+      {posts.map((post, i) => (
+        <ScoreRow post={post} n={posts.length - i} />
+      ))}
+    </ol>
+  </div>
+</Layout>

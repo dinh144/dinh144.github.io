@@ -1,0 +1,29 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import type { SeriesInfo } from '@blog/core/posts';
+import { seriesPaths } from '@blog/core/routes';
+import PageHead from '../../../components/PageHead.astro';
+import ScoreRow from '../../../components/ScoreRow.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => seriesPaths();
+
+const { locale, series } = Astro.props as { locale: Locale; series: SeriesInfo };
+---
+
+<Layout locale={locale} title={series.title} description={series.description} kind="list">
+  <PageHead
+    title={series.title}
+    note={t(locale, 'nav.series')}
+    count={t(locale, 'series.parts', { n: series.parts.length })}
+    lead={series.description}
+    name={`series-${series.id}`}
+  />
+  <div class="frame">
+    <ol class="score" data-score>
+      {series.parts.map((post) => (
+        <ScoreRow post={post} n={post.data.series?.part ?? 1} />
+      ))}
+    </ol>
+  </div>
+</Layout>

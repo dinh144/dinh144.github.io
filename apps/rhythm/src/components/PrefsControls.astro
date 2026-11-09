@@ -1,0 +1,109 @@
+---
+/**
+ * Theme, reading-mode and sound toggles. Reading mode only shows on article pages.
+ * State lives in @blog/core/client/preferences (data attributes on <html>).
+ */
+import { t, type Locale } from '@blog/core/i18n';
+
+interface Props {
+  locale: Locale;
+  reading?: boolean;
+}
+const { locale, reading = false } = Astro.props;
+---
+
+<button
+  type="button"
+  class="icon-btn"
+  data-pref="theme"
+  aria-label={t(locale, 'prefs.theme')}
+  title={t(locale, 'prefs.theme')}
+>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="8"></circle>
+    <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"></path>
+  </svg>
+</button>
+<button
+  type="button"
+  class="icon-btn"
+  data-pref="sound"
+  aria-pressed="false"
+  aria-label={t(locale, 'prefs.sound')}
+  title={t(locale, 'prefs.sound')}
+>
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    aria-hidden="true"
+  >
+    <path d="M4 9.5v5h3.5L12 18V6L7.5 9.5z"></path>
+    <path class="wave" d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.5 7.5 0 0 1 0 10.4"></path>
+  </svg>
+</button>
+{reading && (
+  <button
+    type="button"
+    class="icon-btn"
+    data-pref="reading"
+    aria-pressed="false"
+    aria-label={t(locale, 'prefs.reading')}
+    title={t(locale, 'prefs.readingHint')}
+  >
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.6"
+      aria-hidden="true"
+    >
+      <path d="M3 5.5h6a3 3 0 0 1 3 3V19a2.5 2.5 0 0 0-2.5-2.5H3z" />
+      <path d="M21 5.5h-6a3 3 0 0 0-3 3V19a2.5 2.5 0 0 1 2.5-2.5H21z" />
+    </svg>
+  </button>
+)}
+<script>
+  import { readPrefs, toggleTheme, togglePref } from '@blog/core/client/preferences';
+  import { tick } from '@blog/core/client/sound';
+
+  function sync() {
+    const prefs = readPrefs();
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-pref="sound"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(prefs.sound)));
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-pref="reading"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(prefs.reading)));
+  }
+
+  function bind() {
+    document.querySelectorAll<HTMLButtonElement>('[data-pref]').forEach((button) => {
+      if (button.dataset.bound) return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', () => {
+        const kind = button.dataset.pref;
+        if (kind === 'theme') toggleTheme();
+        if (kind === 'sound' || kind === 'reading') togglePref(kind);
+        sync();
+        tick();
+      });
+    });
+    sync();
+  }
+
+  document.addEventListener('astro:page-load', bind);
+</script>

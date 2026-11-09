@@ -1,0 +1,29 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, tagsOf } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import PageHead from '../../../components/PageHead.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const tags = tagsOf(await getPosts(locale));
+const max = Math.max(1, ...tags.map((tag) => tag.count));
+---
+
+<Layout locale={locale} title={t(locale, 'tags.title')} kind="list">
+  <PageHead title={t(locale, 'tags.title')} count={String(tags.length)} />
+  <div class="frame">
+    <ul class="tag-cloud" data-score>
+      {tags.map((tag) => (
+        <li style={`--w:${(tag.count / max).toFixed(3)}`}>
+          <a href={paths.tag(locale, tag.name)} data-kin>
+            <span class="tag-name">#{tag.name}</span>
+            <span class="tag-count">{tag.count}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Layout>

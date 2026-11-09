@@ -1,0 +1,203 @@
+---
+import Giscus from '@blog/core/components/Giscus.astro';
+import { formatDate, otherLocale, t, type Locale } from '@blog/core/i18n';
+import { getPosts, getSeriesFor, neighbours, type Post } from '@blog/core/posts';
+import { paths, postPaths } from '@blog/core/routes';
+import { render } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+import { bar, c } from '../../../lib/copy';
+
+export const getStaticPaths = () => postPaths();
+
+const { locale, post } = Astro.props as { locale: Locale; post: Post };
+const { data } = post;
+const { Content, headings } = await render(post.entry);
+const series = await getSeriesFor(post);
+const { prev, next } = neighbours(await getPosts(locale), post);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const sections = headings.filter((h) => h.depth === 2);
+const other = otherLocale(locale);
+const hasOther = post.available.includes(other);
+const lang = post.contentLocale;
+const host = data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
+let sectionNo = 0;
+---
+
+<Layout
+  locale={locale}
+  title={data.title}
+  description={data.description}
+  image={paths.og(locale, post.slug)}
+  type="article"
+  published={data.date}
+  available={post.available}
+  reading
+  kind="article"
+>
+  <article class="article" data-type={data.type}>
+    <header class="article-head frame grid">
+      <h1 class="article-title" data-kin="title" lang={lang} transition:name={`title-${post.slug}`}>
+        {data.title}
+      </h1>
+      {data.description && (
+        <p class="dek" lang={lang}>
+          {data.description}
+        </p>
+      )}
+      <div class="article-meta">
+        <p class="meta-type">
+          {data.series && series ? (
+            <a href={paths.series(locale, series.id)}>
+              {series.title} · {t(locale, 'post.part', { n: data.series.part, total: series.parts.length })}
+            </a>
+          ) : (
+            t(locale, `type.${data.type}`)
+          )}
+        </p>
+        <ul class="meta-list">
+          <li>
+            <time datetime={data.date.toISOString()}>{formatDate(data.date, locale)}</time>
+          </li>
+          {data.updated && <li>{t(locale, 'post.updated', { date: formatDate(data.updated, locale) })}</li>}
+          <li>{t(locale, 'post.minutes', { n: post.minutes })}</li>
+          {hasOther && (
+            <li>
+              <a href={paths.post({ ...post, locale: other })} hreflang={other} lang={other}>
+                {t(locale, 'post.readIn')}
+              </a>
+            </li>
+          )}
+        </ul>
+      </div>
+    </header>
+
+    <div class="article-body frame grid">
+      {sections.length > 1 && (
+        <aside class="rail" aria-hidden="true">
+          <div class="rail-inner">
+            <p class="rail-label">{c(locale, 'playing')}</p>
+            <p class="rail-count">
+              <span data-rail-no>01</span>
+              <span class="rail-total">/ {bar(sections.length)}</span>
+            </p>
+            <p class="rail-name" data-rail-name lang={lang}>
+              {sections[0]?.text}
+            </p>
+          </div>
+        </aside>
+      )}
+      {toc.length > 1 && (
+        <details class="toc" open data-toc>
+          <summary>{t(locale, 'post.toc')}</summary>
+          <nav aria-label={t(locale, 'post.toc')}>
+            <ol>
+              {toc.map((h) => (
+                <li class={`depth-${h.depth}`}>
+                  <a href={`#${h.slug}`} data-toc-link={h.slug} lang={lang}>
+                    {h.depth === 2 && (
+                      <span class="toc-no" aria-hidden="true">
+                        {bar(++sectionNo)}
+                      </span>
+                    )}
+                    <span>{h.text}</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        </details>
+      )}
+      <div class="prose" lang={lang} data-prose>
+        {post.fallback && (
+          <p class="notice" lang={locale}>
+            {t(locale, 'post.fallback')}
+          </p>
+        )}
+        {data.aiDraft && (
+          <p class="notice" lang={locale}>
+            {t(locale, 'post.aiDraft')}
+          </p>
+        )}
+        {series && (
+          <nav class="series-box" aria-label={series.title} lang={locale}>
+            <p class="series-name">
+              <a href={paths.series(locale, series.id)}>{series.title}</a>
+              <span>{t(locale, 'series.parts', { n: series.parts.length })}</span>
+            </p>
+            <ol>
+              {series.parts.map((part) => (
+                <li>
+                  <span class="series-no" aria-hidden="true">
+                    {bar(part.data.series?.part ?? 1)}
+                  </span>
+                  {part.slug === post.slug ? (
+                    <strong aria-current="page">{part.data.title}</strong>
+                  ) : (
+                    <a href={paths.post(part)}>{part.data.title}</a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        {data.type === 'link' && data.link && (
+          <p class="visit">
+            <a class="visit-btn" href={data.link} rel="noopener" lang={locale}>
+              <span>{t(locale, 'post.visitLink')}</span>
+              <span class="visit-host">{host}</span>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                aria-hidden="true"
+              >
+                <path d="M7 17 17 7M9 7h8v8"></path>
+              </svg>
+            </a>
+          </p>
+        )}
+        <Content />
+      </div>
+    </div>
+
+    <footer class="article-end frame grid">
+      {data.tags.length > 0 && (
+        <ul class="tags" aria-label={t(locale, 'post.tags')}>
+          {data.tags.map((tag) => (
+            <li>
+              <a href={paths.tag(locale, tag)}>#{tag}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+      <nav class="pager" aria-label={`${t(locale, 'post.prev')} / ${t(locale, 'post.next')}`}>
+        {prev ? (
+          <a class="pager-link prev" href={paths.post(prev)} rel="prev">
+            <span class="pager-label">{t(locale, 'post.prev')}</span>
+            <span class="pager-title" lang={prev.contentLocale}>
+              {prev.data.title}
+            </span>
+          </a>
+        ) : (
+          <span></span>
+        )}
+        {next && (
+          <a class="pager-link next" href={paths.post(next)} rel="next">
+            <span class="pager-label">{t(locale, 'post.next')}</span>
+            <span class="pager-title" lang={next.contentLocale}>
+              {next.data.title}
+            </span>
+          </a>
+        )}
+      </nav>
+      {data.comments && (
+        <div class="comments">
+          <Giscus slug={post.slug} locale={locale} />
+        </div>
+      )}
+    </footer>
+  </article>
+</Layout>
