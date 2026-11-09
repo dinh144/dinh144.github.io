@@ -13,6 +13,7 @@
   --rule: #e3e5e9;
   --tint: #f3f4f6;
   --band: rgb(59 59 232 / 0.035);
+  --staff: rgb(14 17 22 / 0.11);
   --display: 'Mona Sans Variable', 'Mona Sans', 'Helvetica Neue', Arial, sans-serif;
   --text: 'Inter Variable', Inter, system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -33,6 +34,7 @@
   --rule: #23272e;
   --tint: #14171c;
   --band: rgb(124 124 255 / 0.04);
+  --staff: rgb(230 232 235 / 0.12);
   color-scheme: dark;
 }
 @media (min-width: 700px) {
@@ -118,6 +120,10 @@ p {
   position: absolute;
   left: -999px;
   top: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 1rem;
 }
 .skip:focus {
   left: 1rem;
@@ -149,30 +155,63 @@ p {
   grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   column-gap: var(--gutter);
 }
-/* The 12 columns, drawn as faint bands behind everything: the staff the type is set on. */
+/* The 12 columns as hairlines: the stave the score is set on. Only on the score pages (home, lists). */
 .columns {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  display: none;
+}
+[data-kind='home'] .columns,
+[data-kind='list'] .columns {
+  display: block;
 }
 .columns .grid {
   height: 100%;
 }
+/* Only the structural lines of the score are drawn: the outer edges, the bar-number column and the
+   margin column. They run beside the type, never through it. */
 .columns span {
-  background: var(--band);
+  border: 0 solid var(--staff);
 }
 .columns span:nth-child(n + 5) {
   display: none;
+}
+.columns span:nth-child(1) {
+  border-left-width: 1px;
+  border-right-width: 1px;
+}
+.columns span:nth-child(4) {
+  border-right-width: 1px;
 }
 @media (min-width: 700px) {
   .columns span:nth-child(-n + 8) {
     display: block;
   }
+  .columns span:nth-child(4) {
+    border-right-width: 0;
+  }
+  .columns span:nth-child(8) {
+    border-right-width: 1px;
+  }
 }
 @media (min-width: 1024px) {
   .columns span {
     display: block !important;
+  }
+  .columns span:nth-child(1),
+  .columns span:nth-child(8) {
+    border-right-width: 0;
+  }
+  .columns span:nth-child(2) {
+    border-right-width: 1px;
+  }
+  .columns span:nth-child(10) {
+    border-left-width: 1px;
+  }
+  .columns span:nth-child(12) {
+    border-right-width: 1px;
   }
 }
 [data-reading='on'] .columns {
@@ -182,9 +221,15 @@ p {
 /* ---------- kinetic text (built by lines.ts) ---------- */
 .kin {
   display: block;
+  contain: layout style;
 }
 .kl {
   display: block;
+  white-space: nowrap;
+}
+/* Fixed-width word boxes (see track() in lines.ts): glyphs change inside, transforms re-space them. */
+.kbox {
+  display: inline-block;
   white-space: nowrap;
 }
 /* While the motion layer drives the axes every frame, CSS transitions on them would only lag behind. */
@@ -385,13 +430,43 @@ html:not(.is-kinetic) .metro {
 }
 @media (max-width: 1023px) {
   .metro {
-    position: fixed;
-    right: 0.75rem;
-    bottom: 0.75rem;
-    z-index: 40;
-    padding: 0 0.85rem;
-    background: var(--paper);
-    border: 1px solid var(--ink);
+    order: 1;
+    margin-left: auto;
+    justify-content: center;
+    width: 44px;
+    padding: 0;
+  }
+  .tools {
+    order: 2;
+  }
+  .tools .icon-btn {
+    padding: 0;
+  }
+  .brand {
+    gap: 0.5rem;
+    font-size: 1.125rem;
+  }
+  .metro-bpm,
+  .metro-state {
+    display: none;
+  }
+  .metro-beats {
+    display: grid;
+    grid-template-columns: repeat(2, 9px);
+    gap: 3px;
+  }
+  .metro-beats i:first-child {
+    width: 9px;
+  }
+  .metro[aria-pressed='true'] .metro-beats {
+    display: none;
+  }
+  .metro[aria-pressed='true'] .metro-state {
+    display: block;
+  }
+  /* Articles have the reading-mode switch, which stops all motion; the header row has no room for both. */
+  [data-kind='article'] .metro {
+    display: none;
   }
 }
 
@@ -435,29 +510,41 @@ html:not(.is-kinetic) .metro {
 .lens {
   display: none;
 }
-@media all {
-  .is-kinetic .lens {
-    display: block;
-    position: fixed;
-    top: 46vh;
-    left: 0;
-    right: 0;
-    height: 0;
-    z-index: 2;
-    pointer-events: none;
-  }
-  .lens span {
-    position: absolute;
-    top: 0;
-    width: max(6px, calc(var(--margin) - 0.75rem));
-    height: 1px;
-    background: var(--accent);
-  }
-  .lens span:first-child {
-    left: 0;
-  }
-  .lens span:last-child {
-    right: 0;
+.is-kinetic .lens {
+  display: block;
+  position: fixed;
+  top: 46vh;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+/* The playhead: a triangle in the margin and a rule across the bar-number column. */
+.lens-head {
+  position: relative;
+  grid-column: 1 / span 1;
+  height: 2px;
+  background: var(--accent);
+}
+.lens-head::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: calc(100% + 4px);
+  border-block: 7px solid transparent;
+  border-left: 9px solid var(--accent);
+}
+.lens-tail {
+  grid-column: -2 / -1;
+  justify-self: end;
+  width: 24px;
+  height: 2px;
+  background: var(--accent);
+}
+@media (min-width: 1024px) {
+  .lens-head {
+    grid-column: 1 / span 2;
   }
 }
 
@@ -469,10 +556,10 @@ html:not(.is-kinetic) .metro {
 .hero-title {
   grid-column: 1 / -1;
   margin: 0;
-  font: 640 clamp(2.1rem, 0.8rem + 4.6vw, 4.75rem) / 1.06 var(--display);
+  font: 640 clamp(2.2rem, 0.5rem + 6.9vw, 8rem) / 1.02 var(--display);
   font-stretch: 100%;
-  letter-spacing: -0.03em;
-  text-wrap: balance;
+  letter-spacing: -0.035em;
+  text-wrap: pretty;
 }
 /* Four bars of four beats; the current beat lights as the clock runs. */
 .ruler {
@@ -503,7 +590,7 @@ html:not(.is-kinetic) .metro {
 }
 @media (min-width: 1024px) {
   .hero-title {
-    grid-column: 1 / span 11;
+    grid-column: 1 / -1;
   }
     .ruler {
     grid-column: 1 / -1;
@@ -626,6 +713,7 @@ html:not(.is-kinetic) .metro {
 }
 .row-title a {
   display: block;
+  max-inline-size: 91%;
   color: var(--ink);
   text-decoration: none;
   font: inherit;
@@ -654,15 +742,15 @@ html:not(.is-kinetic) .metro {
 }
 .row[data-type='note'] .row-title {
   font-size: clamp(1.4rem, 0.85rem + 1.9vw, 2.5rem);
-  font-weight: 420;
-  font-stretch: 88%;
+  font-weight: 480;
+  font-stretch: 92%;
   line-height: 1.08;
   letter-spacing: -0.015em;
 }
 .row[data-type='link'] .row-title {
   font-size: clamp(1.4rem, 0.85rem + 1.9vw, 2.5rem);
-  font-weight: 520;
-  font-stretch: 112%;
+  font-weight: 540;
+  font-stretch: 104%;
   line-height: 1.08;
   letter-spacing: -0.015em;
 }
@@ -909,7 +997,7 @@ html:not(.is-kinetic) .metro {
     grid-row: 2;
   }
   .article-meta {
-    grid-column: 1 / span 3;
+    grid-column: 1 / span 2;
     grid-row: 1 / span 2;
     align-self: start;
     margin-top: 0.9rem;
@@ -921,12 +1009,17 @@ html:not(.is-kinetic) .metro {
 }
 
 .article-body {
+  position: relative;
   row-gap: 1.5rem;
   border-top: 1px solid var(--rule);
   padding-top: clamp(1.5rem, 3vw, 2.5rem);
 }
 .rail {
   display: none;
+}
+.side {
+  grid-column: 1 / -1;
+  min-width: 0;
 }
 .prose {
   grid-column: 1 / -1;
@@ -1000,28 +1093,31 @@ html:not(.is-kinetic) .metro {
   color: var(--accent);
 }
 @media (min-width: 1024px) {
-  .rail {
-    display: block;
+  .side {
     grid-column: 1 / span 2;
     grid-row: 1;
-  }
-  .rail-inner {
+    align-self: start;
     position: sticky;
     top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .rail {
+    display: block;
+    margin-bottom: 1.75rem;
   }
   .prose {
     grid-column: 4 / span 6;
     grid-row: 1;
   }
   .toc {
-    grid-column: 10 / span 3;
-    grid-row: 1;
-    align-self: start;
-    position: sticky;
-    top: 2rem;
     border-bottom: 0;
-    max-height: calc(100vh - 4rem);
-    overflow-y: auto;
+  }
+  /* Always open on wide screens, even before (or without) the script that sets [open]. */
+  .toc::details-content {
+    content-visibility: visible;
+    display: block;
   }
   .toc summary {
     cursor: default;
@@ -1094,10 +1190,6 @@ html:not(.is-kinetic) .metro {
 }
 
 /* ---------- prose ---------- */
-.article-body .prose {
-  background: var(--paper);
-  box-shadow: 0 0 0 calc(var(--gutter) / 2) var(--paper);
-}
 .prose {
   font-size: 1.125rem;
   line-height: 1.7;
@@ -1243,6 +1335,49 @@ html:not(.is-kinetic) .metro {
 .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
+}
+/* Footnote references and margin notes */
+.prose sup {
+  line-height: 0;
+}
+.prose a[data-footnote-ref] {
+  padding: 0 0.15em;
+  font: 500 0.72em/1 var(--mono);
+  text-decoration: none;
+}
+.sidenote {
+  position: absolute;
+  grid-column: 10 / span 3;
+  grid-row: 1;
+  left: 0;
+  right: 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--muted);
+  transition:
+    color 160ms linear,
+    border-color 160ms linear;
+}
+.sidenote p {
+  display: inline;
+  margin: 0;
+}
+.sidenote-no {
+  margin-right: 0.5rem;
+  font: 500 0.75rem/1 var(--mono);
+  color: var(--accent);
+}
+.sidenote[data-active],
+.sidenote:target {
+  color: var(--ink);
+  border-top-color: var(--accent);
+}
+@media (min-width: 1024px) {
+  .has-sidenotes .footnotes {
+    display: none;
+  }
 }
 .prose .footnotes {
   margin-top: 3rem;
@@ -1537,6 +1672,9 @@ html:not(.is-kinetic) .metro {
 }
 
 /* ---------- footer: the final bar ---------- */
+.site-footer > .frame {
+  container-type: inline-size;
+}
 .site-footer {
   position: relative;
   z-index: 1;
@@ -1549,6 +1687,8 @@ html:not(.is-kinetic) .metro {
   display: inline-block;
   margin: 1rem 0 0;
   font: 700 min(20vw, 18rem) / 0.8 var(--display);
+  /* "dinh144" is 3.63em wide at rest: fill the frame exactly. */
+  font-size: calc(100cqi / 3.66);
   font-stretch: 100%;
   letter-spacing: -0.035em;
   white-space: nowrap;
@@ -1652,6 +1792,17 @@ html[data-motion='reduce'] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
+}
+html[data-motion='reduce'] .row:hover .row-title a,
+html[data-motion='reduce'] .row-title a:focus-visible,
+html[data-motion='reduce'] .nav a:hover,
+html[data-motion='reduce'] .filters a:hover,
+html[data-motion='reduce'] .pager-link:hover .pager-title,
+html[data-motion='reduce'] .visit-btn:hover {
+  font-stretch: inherit;
+}
+html[data-motion='reduce'] .row:hover .row-title a {
+  font-weight: inherit;
 }
 html[data-motion='reduce']::view-transition-group(*),
 html[data-motion='reduce']::view-transition-old(*),
