@@ -11,9 +11,11 @@ mcpServers:
   - awwwards:
       type: stdio
       command: npx
-      args: ["-y", "awwwards-mcp@1.18.0"]
+      args: ["-y", "-p", "awwwards-mcp@1.18.0", "-p", "playwright@1.64.0", "-p", "ffmpeg-static@5.3.0", "awwwards-mcp"]
       env:
         NODE_USE_ENV_PROXY: "1"
+        FFMPEG_BIN: "ffmpeg"
+        AWWWARDS_MCP_IMAGE_RETENTION_DAYS: "30"
   - ui-skills:
       type: http
       url: https://www.ui-skills.com/mcp
