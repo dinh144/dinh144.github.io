@@ -1,0 +1,217 @@
+---
+import Giscus from '@blog/core/components/Giscus.astro';
+import { formatDate, otherLocale, t, type Locale } from '@blog/core/i18n';
+import { getPosts, getSeriesFor, neighbours, type Post } from '@blog/core/posts';
+import { paths, postPaths } from '@blog/core/routes';
+import { render } from 'astro:content';
+import Icon from '../../../components/Icon.astro';
+import SkyStage from '../../../components/SkyStage.astro';
+import StarGlyph from '../../../components/StarGlyph.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { GREEK, frameFor, getSky, neighboursOf } from '../../../lib/sky';
+
+export const getStaticPaths = () => postPaths();
+
+const { locale, post } = Astro.props as { locale: Locale; post: Post };
+const { data } = post;
+const { Content, headings } = await render(post.entry);
+const series = await getSeriesFor(post);
+const all = await getPosts(locale);
+const { prev, next } = neighbours(all, post);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const other = otherLocale(locale);
+const hasOther = post.available.includes(other);
+const lang = post.contentLocale;
+const vi = locale === 'vi';
+
+const sky = await getSky(locale);
+const near = neighboursOf(sky, post.slug);
+const headFrame = frameFor(sky, {
+  focus: [post.slug],
+  aspect: { land: 1.25, port: 2.2 },
+  minShare: 0.5,
+  labels: false,
+});
+const mapFrame = frameFor(sky, { focus: [post.slug, ...near], aspect: { land: 2.6, port: 1.15 } });
+const nearPosts = all.filter((p) => near.includes(p.slug));
+const typeLabel = t(locale, `type.${data.type}`);
+const host = data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
+---
+
+<Layout
+  locale={locale}
+  title={data.title}
+  description={data.description}
+  image={paths.og(locale, post.slug)}
+  type="article"
+  published={data.date}
+  available={post.available}
+  reading
+  page="article"
+>
+  <article class="article" data-type={data.type} data-slug={post.slug}>
+    <header class="article-head wrap" lang={lang}>
+      <SkyStage
+        sky={sky}
+        frame={headFrame}
+        current={post.slug}
+        focus={[post.slug]}
+        variant="band"
+        anchors="none"
+        class="article-sky"
+      />
+      <div class="article-head-copy">
+        <h1 class="display article-title">{data.title}</h1>
+        {data.description && <p class="dek">{data.description}</p>}
+        <p class="article-meta" lang={locale}>
+          <span class="article-type">
+            <StarGlyph type={data.type} size={16} />
+            {data.series && series ? (
+              <a href={paths.series(locale, series.id)}>
+                {GREEK[data.series.part - 1]} · {series.title} ·{' '}
+                {t(locale, 'post.part', { n: data.series.part, total: series.parts.length })}
+              </a>
+            ) : (
+              typeLabel
+            )}
+          </span>
+          <time datetime={data.date.toISOString()}>{formatDate(data.date, locale)}</time>
+          {data.updated && <span>{t(locale, 'post.updated', { date: formatDate(data.updated, locale) })}</span>}
+          {data.type !== 'link' && <span>{t(locale, 'post.minutes', { n: post.minutes })}</span>}
+          {hasOther && (
+            <a href={paths.post({ ...post, locale: other })} hreflang={other} lang={other}>
+              {t(locale, 'post.readIn')}
+            </a>
+          )}
+        </p>
+      </div>
+    </header>
+
+    <div class="article-grid wrap">
+      {toc.length > 1 && (
+        <aside class="toc" aria-label={t(locale, 'post.toc')} lang={locale}>
+          <p class="toc-title">{t(locale, 'post.toc')}</p>
+          <ol>
+            {toc.map((h) => (
+              <li class={`depth-${h.depth}`}>
+                <a href={`#${h.slug}`} lang={lang}>
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </aside>
+      )}
+      <div class="prose" lang={lang}>
+        {post.fallback && (
+          <p class="notice" lang={locale}>
+            <Icon name="info" size={18} />
+            <span>{t(locale, 'post.fallback')}</span>
+          </p>
+        )}
+        {data.aiDraft && (
+          <p class="notice" lang={locale}>
+            <Icon name="info" size={18} />
+            <span>{t(locale, 'post.aiDraft')}</span>
+          </p>
+        )}
+        {series && (
+          <nav class="series-box" aria-label={series.title} lang={locale}>
+            <p class="series-box-title">
+              <StarGlyph type="series" size={18} />
+              <a href={paths.series(locale, series.id)}>{series.title}</a>
+            </p>
+            <ol>
+              {series.parts.map((part) => (
+                <li class:list={{ 'is-current': part.slug === post.slug }}>
+                  <span class="bayer" aria-hidden="true">
+                    {GREEK[(part.data.series?.part ?? 1) - 1]}
+                  </span>
+                  {part.slug === post.slug ? (
+                    <strong aria-current="page">{part.data.title}</strong>
+                  ) : (
+                    <a href={paths.post(part)}>{part.data.title}</a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        {data.type === 'link' && data.link && (
+          <p class="visit">
+            <a class="btn btn--solid" href={data.link} rel="noopener">
+              {t(locale, 'post.visitLink')}
+              <span class="visit-host">{host}</span>
+              <Icon name="external" size={18} />
+            </a>
+          </p>
+        )}
+        <Content />
+        {data.tags.length > 0 && (
+          <ul class="tags" aria-label={t(locale, 'post.tags')} lang={locale}>
+            {data.tags.map((tag) => (
+              <li>
+                <a href={paths.tag(locale, tag)}>#{tag}</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+
+    <footer class="article-foot wrap" lang={locale}>
+      <nav class="pager" aria-label={`${t(locale, 'post.prev')} / ${t(locale, 'post.next')}`}>
+        {prev ? (
+          <a class="pager-link" href={paths.post(prev)} rel="prev" data-star={prev.slug}>
+            <span class="pager-dir">
+              <Icon name="arrow-left" size={16} />
+              {t(locale, 'post.prev')}
+            </span>
+            <span class="pager-title">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span class="pager-link is-empty"></span>
+        )}
+        {next && (
+          <a class="pager-link pager-link--next" href={paths.post(next)} rel="next" data-star={next.slug}>
+            <span class="pager-dir">
+              {t(locale, 'post.next')}
+              <Icon name="arrow-right" size={16} />
+            </span>
+            <span class="pager-title">{next.data.title}</span>
+          </a>
+        )}
+      </nav>
+
+      {nearPosts.length > 0 && (
+        <section class="nearby" aria-labelledby="nearby-title">
+          <h2 id="nearby-title" class="nearby-title">
+            {vi ? 'Những ngôi sao lân cận' : 'Neighbouring stars'}
+          </h2>
+          <SkyStage
+            sky={sky}
+            frame={mapFrame}
+            current={post.slug}
+            focus={[post.slug, ...near]}
+            variant="mini"
+            anchors="focus"
+            keepStatic
+            contextLabels
+          />
+          <ul class="nearby-list">
+            {nearPosts.map((p) => (
+              <li>
+                <StarGlyph type={p.data.type} size={16} />
+                <a href={paths.post(p)} data-star={p.slug}>
+                  {p.data.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {data.comments && <Giscus slug={post.slug} locale={locale} />}
+    </footer>
+  </article>
+</Layout>

@@ -1,0 +1,35 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import type { Post, TagInfo } from '@blog/core/posts';
+import { paths, tagPaths } from '@blog/core/routes';
+import PlateHead from '../../../components/PlateHead.astro';
+import PostCard from '../../../components/PostCard.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { frameFor, getSky } from '../../../lib/sky';
+
+export const getStaticPaths = () => tagPaths();
+
+const { locale, tag, posts } = Astro.props as { locale: Locale; tag: TagInfo; posts: Post[] };
+const sky = await getSky(locale);
+const focus = posts.map((p) => p.slug);
+const frame = frameFor(sky, { focus, aspect: { land: 1.55, port: 1.5 }, minShare: 0.45 });
+const vi = locale === 'vi';
+const caption = vi
+  ? `${posts.length} ngôi sao trong vùng trời này.`
+  : `${posts.length} ${posts.length === 1 ? 'star' : 'stars'} in this region of the sky.`;
+---
+
+<Layout locale={locale} title={`#${tag.name}`} page="tag">
+  <PlateHead title={`#${tag.name}`} caption={caption} sky={sky} frame={frame} focus={focus} keepStatic>
+    <p class="plate-count">
+      <a href={paths.tags(locale)}>{t(locale, 'tags.title')}</a>
+    </p>
+  </PlateHead>
+  <section class="catalogue wrap" aria-label={`#${tag.name}`}>
+    <ol class="stream">
+      {posts.map((post) => (
+        <PostCard post={post} heading="h2" />
+      ))}
+    </ol>
+  </section>
+</Layout>

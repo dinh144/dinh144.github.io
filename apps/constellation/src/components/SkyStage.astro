@@ -1,0 +1,186 @@
+---
+/**
+ * One framed view of the sky. Renders a complete static star chart (graticule, tag lines,
+ * constellation lines, star glyphs, labels) that reads with no JavaScript at all; when motion is
+ * allowed the WebGL scene draws glowing stars exactly on top of the `.star-dot` elements.
+ * Labels are links, but the whole stage is aria-hidden and out of the tab order: every destination
+ * here is also in the real list on the page.
+ */
+import { GREEK, type Orientation, type Rect, type Sky } from '../lib/sky';
+
+interface Props {
+  sky: Sky;
+  frame: Record<Orientation, Rect>;
+  /** Stars drawn bright and labelled; default: all. */
+  focus?: string[];
+  /** The post this page is about (drawn as "you are here", not linked). */
+  current?: string;
+  /** Hide stars outside the focus set instead of dimming them. */
+  only?: boolean;
+  /** Which region labels to show. */
+  anchors?: 'all' | 'focus' | 'none';
+  /** Label context stars too (dimmer). */
+  contextLabels?: boolean;
+  variant?: 'hero' | 'band' | 'map' | 'mini';
+  /** Keep the static chart visible in reading / reduced-motion mode (the chart is the content). */
+  keepStatic?: boolean;
+  /** Draw the constellation lines in on arrival. */
+  draw?: boolean;
+  /** 'land' uses the landscape layout at every orientation (wide bands on phones). */
+  world?: 'auto' | 'land';
+  class?: string;
+}
+
+const {
+  sky,
+  frame,
+  focus,
+  current,
+  only = false,
+  anchors = 'focus',
+  contextLabels = false,
+  variant = 'band',
+  keepStatic = false,
+  draw = false,
+  world = 'auto',
+  class: className,
+} = Astro.props;
+
+const orientations: Orientation[] = ['land', 'port'];
+const norm = (o: Orientation, p: { x: number; y: number }) => ({
+  x: (p.x - frame[o].x) / frame[o].w,
+  y: (p.y - frame[o].y) / frame[o].h,
+});
+const inside = (v: { x: number; y: number }, m = 0.04) => v.x > -m && v.x < 1 + m && v.y > -m && v.y < 1 + m;
+const focusSet = new Set(focus ?? sky.stars.map((s) => s.slug));
+
+const order = [...sky.stars].sort((a, b) => a.date.localeCompare(b.date));
+const stars = sky.stars
+  .map((star) => {
+    const land = norm('land', star.pos.land);
+    const n = { land, port: world === 'land' ? land : norm('port', star.pos.port) };
+    const state = star.slug === current ? 'current' : focusSet.has(star.slug) ? 'focus' : 'context';
+    return { star, n, state, i: order.indexOf(star) };
+  })
+  .filter(({ n, state }) => (inside(n.land) || inside(n.port)) && (!only || state !== 'context'));
+const shown = new Set(stars.map((s) => s.star.slug));
+const lookup = new Map(stars.map((s) => [s.star.slug, s]));
+
+const edges = sky.edges
+  .filter((e) => shown.has(e.a) && shown.has(e.b))
+  .map((e) => {
+    const a = lookup.get(e.a)!;
+    const b = lookup.get(e.b)!;
+    const hot = focusSet.has(e.a) && focusSet.has(e.b);
+    return { e, a, b, hot };
+  });
+
+const anchorList = sky.anchors
+  .filter((a) => anchors !== 'none')
+  .filter((a) => anchors === 'all' || a.members.some((m) => focusSet.has(m)))
+  .map((a) => {
+    const land = norm('land', a.pos.land);
+    return { a, n: { land, port: world === 'land' ? land : norm('port', a.pos.port) } };
+  })
+  .filter(({ n }) => inside(n.land, 0) || inside(n.port, 0));
+
+const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
+const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '');
+---
+
+<div
+  class:list={['sky-stage', `sky-stage--${variant}`, className, { 'keep-static': keepStatic, 'is-draw': draw }]}
+  aria-hidden="true"
+  data-stage
+  data-pagefind-ignore
+>
+  <svg class="graticule" viewBox="0 0 1440 820" preserveAspectRatio="xMidYMid slice" focusable="false">
+    <g fill="none" stroke="currentColor" vector-effect="non-scaling-stroke">
+      {[260, 470, 680, 890, 1100, 1310].map((r) => (
+        <circle cx="1240" cy="-180" r={r} vector-effect="non-scaling-stroke" />
+      ))}
+      {[-8, 8, 24, 40, 56, 72].map((deg) => {
+        const rad = ((90 + deg) * Math.PI) / 180;
+        return (
+          <line
+            x1="1240"
+            y1="-180"
+            x2={1240 + Math.cos(rad) * 1700}
+            y2={-180 + Math.sin(rad) * 1700}
+            vector-effect="non-scaling-stroke"
+          />
+        );
+      })}
+    </g>
+  </svg>
+
+  {orientations.map((o) => (
+    <svg class={`lines lines--${o}`} viewBox="0 0 1000 1000" preserveAspectRatio="none" focusable="false">
+      {edges.map(({ e, a, b, hot }) => (
+        <line
+          class:list={['edge', `edge--${e.kind}`, { 'is-focus': hot }]}
+          data-a={e.a}
+          data-b={e.b}
+          x1={(a.n[o].x * 1000).toFixed(2)}
+          y1={(a.n[o].y * 1000).toFixed(2)}
+          x2={(b.n[o].x * 1000).toFixed(2)}
+          y2={(b.n[o].y * 1000).toFixed(2)}
+          pathLength={e.kind === 'series' ? '1' : undefined}
+          vector-effect="non-scaling-stroke"
+          style={`--i:${Math.max(a.i, b.i)}`}
+        />
+      ))}
+    </svg>
+  ))}
+
+  {anchorList.map(({ a, n }) => (
+    <a
+      class:list={[
+        'anchor',
+        `anchor--${a.kind}`,
+        { 'is-focus': a.members.some((m) => focusSet.has(m)) },
+        // keep region names inside the frame near its edges
+        n.land.x < 0.18 ? 'al-start' : n.land.x > 0.82 ? 'al-end' : '',
+        n.port.x < 0.22 ? 'ap-start' : n.port.x > 0.78 ? 'ap-end' : '',
+      ]}
+      href={a.href}
+      tabindex="-1"
+      data-anchor={a.id}
+      data-members={a.members.join(' ')}
+      style={`--x:${pct(n.land.x)};--y:${pct(n.land.y)};--px:${pct(n.port.x)};--py:${pct(n.port.y)}`}
+    >
+      {a.label}
+    </a>
+  ))}
+
+  {stars.map(({ star, n, state, i }) => {
+    const labelled = state !== 'context' || contextLabels;
+    const Tag = state === 'current' ? 'span' : 'a';
+    return (
+      <Tag
+        class:list={[
+          'star',
+          `star--${star.type}`,
+          `is-${state}`,
+          { 'side-land-l': star.side.land === 'l', 'side-port-l': (world === 'land' ? star.side.land : star.side.port) === 'l', 'no-label': !labelled },
+        ]}
+        href={state === 'current' ? undefined : star.href}
+        tabindex={state === 'current' ? undefined : '-1'}
+        data-slug={star.slug}
+        data-type={star.type}
+        data-mag={star.mag.toFixed(3)}
+        data-state={state}
+        style={`--x:${pct(n.land.x)};--y:${pct(n.land.y)};--px:${pct(n.port.x)};--py:${pct(n.port.y)};--mag:${star.mag.toFixed(3)};--i:${i}`}
+      >
+        <span class="star-dot" />
+        <span class="star-label">
+          <span class="star-title">{star.title}</span>
+          <span class="star-meta">
+            {star.series && <span class="star-bayer">{greek(star.series.part)}</span>}
+            {star.meta}
+          </span>
+        </span>
+      </Tag>
+    );
+  })}
+</div>

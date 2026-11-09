@@ -1,0 +1,60 @@
+---
+import { formatDate, t, type Locale } from '@blog/core/i18n';
+import type { SeriesInfo } from '@blog/core/posts';
+import { paths, seriesPaths } from '@blog/core/routes';
+import PlateHead from '../../../components/PlateHead.astro';
+import StarGlyph from '../../../components/StarGlyph.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { GREEK, frameFor, getSky } from '../../../lib/sky';
+
+export const getStaticPaths = () => seriesPaths();
+
+const { locale, series } = Astro.props as { locale: Locale; series: SeriesInfo };
+const sky = await getSky(locale);
+const focus = series.parts.map((p) => p.slug);
+const frame = frameFor(sky, { focus, aspect: { land: 1.55, port: 1.5 }, minShare: 0.45 });
+---
+
+<Layout locale={locale} title={series.title} description={series.description} page="series">
+  <PlateHead
+    title={series.title}
+    caption={series.description}
+    sky={sky}
+    frame={frame}
+    focus={focus}
+    anchors="focus"
+    keepStatic
+    draw
+  >
+    <p class="plate-count">
+      {t(locale, 'nav.series')} · {t(locale, 'series.parts', { n: series.parts.length })}
+    </p>
+  </PlateHead>
+  <section class="catalogue wrap" aria-label={series.title}>
+    <ol class="parts">
+      {series.parts.map((post) => (
+        <li class="part" data-slug={post.slug}>
+          <span class="part-bayer" aria-hidden="true">
+            {GREEK[(post.data.series?.part ?? 1) - 1]}
+          </span>
+          <div class="part-body">
+            <p class="part-num">
+              {t(locale, 'post.part', { n: post.data.series?.part ?? 1, total: series.parts.length })}
+            </p>
+            <h2 class="entry-title">
+              <a href={paths.post(post)} data-star={post.slug}>
+                {post.data.title}
+              </a>
+            </h2>
+            {post.data.description && <p class="entry-desc">{post.data.description}</p>}
+            <p class="entry-meta">
+              <StarGlyph type={post.data.type} size={14} />
+              <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date, locale)}</time>
+              <span>{t(locale, 'post.minutes', { n: post.minutes })}</span>
+            </p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </section>
+</Layout>

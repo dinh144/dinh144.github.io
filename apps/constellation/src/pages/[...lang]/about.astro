@@ -1,0 +1,41 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPage } from '@blog/core/posts';
+import { localePaths } from '@blog/core/routes';
+import { render } from 'astro:content';
+import PlateHead from '../../components/PlateHead.astro';
+import Layout from '../../layouts/Layout.astro';
+import { frameFor, getSky } from '../../lib/sky';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const page = await getPage(locale, 'about');
+const rendered = page ? await render(page) : undefined;
+const Content = rendered?.Content;
+const lang = page?.id.split('/')[0] ?? locale;
+const sky = await getSky(locale);
+const frame = frameFor(sky, { aspect: { land: 1.55, port: 1.5 } });
+---
+
+<Layout
+  locale={locale}
+  title={page?.data.title ?? t(locale, 'nav.about')}
+  description={page?.data.description}
+  page="about"
+>
+  <PlateHead
+    title={page?.data.title ?? t(locale, 'nav.about')}
+    caption={page?.data.description}
+    lang={lang}
+    sky={sky}
+    frame={frame}
+    anchors="all"
+    quiet
+  />
+  <div class="article-grid wrap">
+    <div class="prose" lang={lang}>
+      {Content && <Content />}
+    </div>
+  </div>
+</Layout>

@@ -1,0 +1,42 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPostsBySection, type Section } from '@blog/core/posts';
+import { sectionPaths } from '@blog/core/routes';
+import PlateHead from '../../../components/PlateHead.astro';
+import PostCard from '../../../components/PostCard.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { frameFor, getSky } from '../../../lib/sky';
+
+export const getStaticPaths = () => sectionPaths();
+
+const { locale, section } = Astro.props as { locale: Locale; section: Section };
+const posts = await getPostsBySection(locale, section);
+const title = t(locale, section === 'posts' ? 'nav.posts' : section === 'notes' ? 'nav.notes' : 'nav.links');
+const vi = locale === 'vi';
+const captions = {
+  posts: vi ? 'Những ngôi sao sáng nhất: bài dài, viết kỹ.' : 'The brightest stars: long, considered posts.',
+  notes: vi ? 'Những đốm sáng nhỏ: điều mình vừa học được.' : 'Small points of light: things I just learned.',
+  links: vi ? 'Những vòng sáng: trang đáng đọc ở nơi khác.' : 'Rings of light: pages worth reading elsewhere.',
+};
+const sky = await getSky(locale);
+const focus = posts.map((p) => p.slug);
+const frame = frameFor(sky, { focus, aspect: { land: 1.55, port: 1.5 } });
+const count = vi ? `${posts.length} mục` : `${posts.length} ${posts.length === 1 ? 'entry' : 'entries'}`;
+---
+
+<Layout locale={locale} title={title} page="list">
+  <PlateHead title={title} caption={captions[section]} sky={sky} frame={frame} focus={focus}>
+    <p class="plate-count">{count}</p>
+  </PlateHead>
+  <section class="catalogue wrap" aria-label={title}>
+    {posts.length ? (
+      <ol class="stream">
+        {posts.map((post) => (
+          <PostCard post={post} heading="h2" />
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'list.empty')}</p>
+    )}
+  </section>
+</Layout>
