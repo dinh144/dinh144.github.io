@@ -1,6 +1,54 @@
 {
   "version": 1,
   "skills": {
+    "awwwards-design-md": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/awwwards-design-md/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "4326bcf7d9350b6c83619ea2c91b1c0d57c0cc3d74dd315dbeb1743a4ed12cfa",
+      "installMode": "copy"
+    },
+    "awwwards-doctor": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/awwwards-doctor/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "d2cdd1984ee53c7dc52a9c10e046b85dc507ffc3f0feb6ed2e08067f29e974db",
+      "installMode": "copy"
+    },
+    "awwwards-inspiration": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/awwwards-inspiration/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "9d1a37ced7aeac87cadeb3a5c3a150437303bf0369961e846e12dde1ff446078",
+      "installMode": "copy"
+    },
+    "awwwards-motion-study": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/awwwards-motion-study/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "5456df78e4b782eab8609fa123295eed2cd4cfa1e8d7013434824d7aac2b0647",
+      "installMode": "copy"
+    },
+    "awwwards-section-loop": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/awwwards-section-loop/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "fa24c3bd253f4ec2eb393153cb2089099e802b137a32f530642cfdbc768c86fb",
+      "installMode": "copy"
+    },
+    "awwwards-setup": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/awwwards-setup/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "c712c91fd16a3f8167b612f3ab277ee114f5eb021cb17b8f5090254d0ce8614f",
+      "installMode": "copy"
+    },
     "better-accessibility": {
       "source": "jakubkrehel/skills",
       "sourceType": "github",
@@ -120,11 +168,27 @@
       "computedHash": "3b04fd6eb5fef3b49c76b6af2b0bb542bbadcdbd88beed7ca11ab54d5a207750",
       "installMode": "copy"
     },
+    "motion-authoring": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/motion-authoring/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "f7c57d0ba7ff9c54b16c5c2d00266001e7c298f20ad5fbea5dcf9eb79978e898",
+      "installMode": "copy"
+    },
     "performance": {
       "source": "addyosmani/web-quality-skills",
       "sourceType": "github",
       "skillPath": "skills/performance/SKILL.md",
       "computedHash": "ce9d36f139a1b2a6a8ac2cb222698963b8076d2dd8b41685e8e8ae589cdcf1e4",
+      "installMode": "copy"
+    },
+    "recreate": {
+      "source": "INSANE0777/awwwards-skills",
+      "sourceType": "github",
+      "skillPath": "skills/recreate/SKILL.md",
+      "ref": "skills-v2026.11.07 (6d2b3ee)",
+      "computedHash": "83d6462645d54fff6f52db3ddd28fe0554d08b734c88381eba51b3acb8dcc51e",
       "installMode": "copy"
     },
     "web-quality-audit": {

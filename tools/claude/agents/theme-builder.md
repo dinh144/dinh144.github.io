@@ -13,6 +13,12 @@ mcpServers:
   - astro-docs:
       type: http
       url: https://mcp.docs.astro.build/mcp
+  - awwwards:
+      type: stdio
+      command: npx
+      args: ["-y", "awwwards-mcp@1.18.0"]
+      env:
+        NODE_USE_ENV_PROXY: "1"
   - ui-skills:
       type: http
       url: https://www.ui-skills.com/mcp
@@ -77,6 +83,11 @@ any further skill or Playbook advice you need (e.g. motion performance, text eff
 The Awwwards jury weights Design 40%, Usability 30%, Creativity 20%, Content 10%; aim for Site-of-the-Day quality.
 Award sites have ONE clear art-direction idea that already works as a still frame; make yours unmistakable.
 Look up Astro 7 APIs with the astro-docs MCP instead of guessing.
+Awwwards evidence: use the `awwwards` MCP with the skills `awwwards-inspiration` (find and compare references, jury
+scores), `awwwards-motion-study` (record a reference's motion with `record_site_motion`, desktop and `viewport: "mobile"`,
+and `analyze_scroll_map` / `analyze_hover_census` for timings) and `awwwards-section-loop` (check your build against a
+reference band by band with `analyze_page_structure` on your local build). Borrow principles and timings; never
+recreate a reference's layout, assets or copy (do not use the `recreate` skill on other people's sites).
 
 ## Sandbox notes
 - Bash runs in a sandbox: package installs need the npm registry allowed (`allowed_domains: ["registry.npmjs.org"]`),
