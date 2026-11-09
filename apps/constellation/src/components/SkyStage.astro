@@ -6,7 +6,7 @@
  * Labels are links, but the whole stage is aria-hidden and out of the tab order: every destination
  * here is also in the real list on the page.
  */
-import { GREEK, type Orientation, type Rect, type Sky } from '../lib/sky';
+import { GREEK, ORIENTATIONS, labelledIn, type Orientation, type Rect, type Sky } from '../lib/sky';
 
 interface Props {
   sky: Sky;
@@ -46,23 +46,31 @@ const {
   class: className,
 } = Astro.props;
 
-const orientations: Orientation[] = ['land', 'port'];
+const orientations: Orientation[] = ORIENTATIONS;
 const norm = (o: Orientation, p: { x: number; y: number }) => ({
   x: (p.x - frame[o].x) / frame[o].w,
   y: (p.y - frame[o].y) / frame[o].h,
 });
+/** Normalised position in every world ('land' stages use the landscape layout everywhere). */
+const place = (pos: Record<Orientation, { x: number; y: number }>) => {
+  const land = norm('land', pos.land);
+  return world === 'land'
+    ? { land, mid: land, port: land }
+    : { land, mid: norm('mid', pos.mid), port: norm('port', pos.port) };
+};
 const inside = (v: { x: number; y: number }, m = 0.04) => v.x > -m && v.x < 1 + m && v.y > -m && v.y < 1 + m;
+const insideAny = (n: Record<Orientation, { x: number; y: number }>, m?: number) =>
+  orientations.some((o) => inside(n[o], m));
 const focusSet = new Set(focus ?? sky.stars.map((s) => s.slug));
 
 const order = [...sky.stars].sort((a, b) => a.date.localeCompare(b.date));
 const stars = sky.stars
   .map((star) => {
-    const land = norm('land', star.pos.land);
-    const n = { land, port: world === 'land' ? land : norm('port', star.pos.port) };
+    const n = place(star.pos);
     const state = star.slug === current ? 'current' : focusSet.has(star.slug) ? 'focus' : 'context';
     return { star, n, state, i: order.indexOf(star) };
   })
-  .filter(({ n, state }) => (inside(n.land) || inside(n.port)) && (!only || state !== 'context'));
+  .filter(({ n, state }) => insideAny(n) && (!only || state !== 'context'));
 const shown = new Set(stars.map((s) => s.star.slug));
 const lookup = new Map(stars.map((s) => [s.star.slug, s]));
 
@@ -76,14 +84,15 @@ const edges = sky.edges
   });
 
 const anchorList = sky.anchors
-  .filter((a) => anchors !== 'none')
+  .filter(() => anchors !== 'none')
   .filter((a) => anchors === 'all' || a.members.some((m) => focusSet.has(m)))
-  .map((a) => {
-    const land = norm('land', a.pos.land);
-    return { a, n: { land, port: world === 'land' ? land : norm('port', a.pos.port) } };
-  })
-  .filter(({ n }) => inside(n.land, 0) || inside(n.port, 0));
+  .map((a) => ({ a, n: place(a.pos) }))
+  .filter(({ n }) => insideAny(n, 0));
 
+const vars = (n: Record<Orientation, { x: number; y: number }>) =>
+  `--x:${pct(n.land.x)};--y:${pct(n.land.y)};--mx:${pct(n.mid.x)};--my:${pct(n.mid.y)};--px:${pct(n.port.x)};--py:${pct(n.port.y)}`;
+const edgeClass = (v: number, lo: number, hi: number) => (v < lo ? 'start' : v > hi ? 'end' : 'mid');
+const here = sky.locale === 'vi' ? 'Bạn ở đây' : 'You are here';
 const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
 const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '');
 ---
@@ -140,14 +149,15 @@ const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '')
         `anchor--${a.kind}`,
         { 'is-focus': a.members.some((m) => focusSet.has(m)) },
         // keep region names inside the frame near its edges
-        n.land.x < 0.18 ? 'al-start' : n.land.x > 0.82 ? 'al-end' : '',
-        n.port.x < 0.22 ? 'ap-start' : n.port.x > 0.78 ? 'ap-end' : '',
+        `al-${edgeClass(n.land.x, 0.18, 0.82)}`,
+        `am-${edgeClass(n.mid.x, 0.2, 0.8)}`,
+        `ap-${edgeClass(n.port.x, 0.24, 0.76)}`,
       ]}
       href={a.href}
       tabindex="-1"
       data-anchor={a.id}
       data-members={a.members.join(' ')}
-      style={`--x:${pct(n.land.x)};--y:${pct(n.land.y)};--px:${pct(n.port.x)};--py:${pct(n.port.y)}`}
+      style={vars(n)}
     >
       {a.label}
     </a>
@@ -162,7 +172,13 @@ const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '')
           'star',
           `star--${star.type}`,
           `is-${state}`,
-          { 'side-land-l': star.side.land === 'l', 'side-port-l': (world === 'land' ? star.side.land : star.side.port) === 'l', 'no-label': !labelled },
+          {
+            'side-land-l': star.side.land === 'l',
+            'side-mid-l': (world === 'land' ? star.side.land : star.side.mid) === 'l',
+            'side-port-l': (world === 'land' ? star.side.land : star.side.port) === 'l',
+            'no-label': !labelled,
+            'port-quiet': state !== 'current' && world !== 'land' && !labelledIn('port', star.type),
+          },
         ]}
         href={state === 'current' ? undefined : star.href}
         tabindex={state === 'current' ? undefined : '-1'}
@@ -170,16 +186,25 @@ const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '')
         data-type={star.type}
         data-mag={star.mag.toFixed(3)}
         data-state={state}
-        style={`--x:${pct(n.land.x)};--y:${pct(n.land.y)};--px:${pct(n.port.x)};--py:${pct(n.port.y)};--mag:${star.mag.toFixed(3)};--i:${i}`}
+        style={`${vars(n)};--mag:${star.mag.toFixed(3)};--i:${i}`}
       >
         <span class="star-dot" />
-        <span class="star-label">
-          <span class="star-title">{star.title}</span>
-          <span class="star-meta">
-            {star.series && <span class="star-bayer">{greek(star.series.part)}</span>}
-            {star.meta}
+        {state === 'current' ? (
+          <span class="star-label star-label--here">
+            <span class="star-meta">{here}</span>
           </span>
-        </span>
+        ) : (
+          <span class="star-label">
+            <span class="star-title" lang={star.fallback ? 'vi' : undefined}>
+              {star.title}
+            </span>
+            <span class="star-meta">
+              {star.series && <span class="star-bayer">{greek(star.series.part)}</span>}
+              {star.meta}
+              {star.fallback && <span class="star-vi">VI</span>}
+            </span>
+          </span>
+        )}
       </Tag>
     );
   })}

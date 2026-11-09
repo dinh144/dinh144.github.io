@@ -2,15 +2,18 @@
  * The sky: a deterministic star-chart layout built from the real post data.
  * Posts are stars (size = reading length, colour + shape = type), posts sharing a tag are joined
  * by faint lines, series are drawn as named constellations. The layout is computed once per locale
- * at build time with a small force simulation, in two "worlds": landscape (desktop) and portrait (phone).
+ * at build time with a small force simulation, in three "worlds": landscape (desktop), mid (tablet,
+ * the chart beside the copy) and portrait (phone, the chart above the copy).
  * Every page frames a region of the same sky, so moving between pages feels like moving the telescope.
  * Presentation only: all data comes from @blog/core.
  */
 import { slugify, t, type Locale } from '@blog/core/i18n';
 import { getPosts, getSeriesList, tagsOf, type Post } from '@blog/core/posts';
 import { paths } from '@blog/core/routes';
+import { tagLabel } from './tags';
 
-export type Orientation = 'land' | 'port';
+export type Orientation = 'land' | 'mid' | 'port';
+export const ORIENTATIONS: Orientation[] = ['land', 'mid', 'port'];
 export interface Pt {
   x: number;
   y: number;
@@ -35,6 +38,8 @@ export interface SkyStar {
   mag: number;
   /** Short meta line under the label. */
   meta: string;
+  /** Shown in the default locale because this locale has no translation yet. */
+  fallback: boolean;
   pos: Record<Orientation, Pt>;
   /** Which side of the star its label sits on, per world. */
   side: Record<Orientation, 'r' | 'l'>;
@@ -62,11 +67,25 @@ export interface Sky {
   counts: { stars: number; topics: number; constellations: number };
 }
 
-/** Reference world sizes in CSS px: the home hero at 1440x820 and at 390x800. */
+/**
+ * Reference world sizes in CSS px. land: the full-bleed desktop hero; mid: the chart column beside
+ * the copy on tablets / small laptops; port: the chart box between header and copy on phones.
+ */
 export const WORLD: Record<Orientation, { w: number; h: number }> = {
   land: { w: 1440, h: 820 },
-  port: { w: 390, h: 800 },
+  mid: { w: 640, h: 700 },
+  port: { w: 390, h: 440 },
 };
+/** Label sizing per world (px): max label width, average glyph width, max lines. */
+const LABEL: Record<Orientation, { max: number; char: number; lines: number; line: number; meta: number }> = {
+  land: { max: 200, char: 7.4, lines: 4, line: 20, meta: 18 },
+  mid: { max: 168, char: 7.0, lines: 3, line: 19, meta: 0 },
+  port: { max: 168, char: 6.6, lines: 3, line: 17, meta: 0 },
+};
+/** On phones only the bright stars (articles) carry a standing label; the rest name themselves on tap. */
+export function labelledIn(o: Orientation, type: string): boolean {
+  return o !== 'port' || type === 'article';
+}
 
 /** Where stars may sit on the home hero, and where the title cartouche and legend live. */
 const HOME: Record<Orientation, { bounds: Rect; avoid: Rect[] }> = {
@@ -77,9 +96,13 @@ const HOME: Record<Orientation, { bounds: Rect; avoid: Rect[] }> = {
       { x: 1110, y: 640, w: 330, h: 180 }, // legend, bottom right
     ],
   },
+  mid: {
+    bounds: { x: 20, y: 112, w: 600, h: 560 },
+    avoid: [],
+  },
   port: {
-    bounds: { x: 10, y: 142, w: 370, h: 352 },
-    avoid: [{ x: 0, y: 500, w: 390, h: 300 }],
+    bounds: { x: 8, y: 14, w: 374, h: 412 },
+    avoid: [],
   },
 };
 
@@ -131,7 +154,24 @@ function footprint(n: SimNode): Rect {
     : { x: n.x - gap - n.lw, y: n.y - n.lh / 2, w: n.r + gap + n.lw, h: n.lh };
 }
 
-function simulate(nodes: SimNode[], links: SimLink[], bounds: Rect, avoid: Rect[], iterations = 700) {
+/** Does segment p-q pass through rect r (inflated by pad)? */
+function segmentHits(px: number, py: number, qx: number, qy: number, r: Rect, pad = 6): boolean {
+  for (let i = 1; i < 16; i++) {
+    const x = px + ((qx - px) * i) / 16;
+    const y = py + ((qy - py) * i) / 16;
+    if (x > r.x - pad && x < r.x + r.w + pad && y > r.y - pad && y < r.y + r.h + pad) return true;
+  }
+  return false;
+}
+
+function simulate(
+  nodes: SimNode[],
+  links: SimLink[],
+  bounds: Rect,
+  avoid: Rect[],
+  segments: [number, number][] = [],
+  iterations = 700,
+) {
   const cx = bounds.x + bounds.w / 2;
   const cy = bounds.y + bounds.h / 2;
   const spread = Math.min(bounds.w, bounds.h);
@@ -195,6 +235,29 @@ function simulate(nodes: SimNode[], links: SimLink[], bounds: Rect, avoid: Rect[
               nodes[j].x -= (sx * ox) / 2;
             }
           }
+        }
+      }
+    }
+    // region names never sit on a constellation line: push them off the segment
+    if (it > iterations * 0.4) {
+      for (const n of nodes) {
+        if (n.kind !== 'anchor') continue;
+        const f = footprint(n);
+        for (const [ia, ib] of segments) {
+          const a = nodes[ia];
+          const b = nodes[ib];
+          if (!segmentHits(a.x, a.y, b.x, b.y, f)) continue;
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const len = Math.hypot(dx, dy) || 1;
+          let nx = -dy / len;
+          let ny = dx / len;
+          if ((n.x - a.x) * nx + (n.y - a.y) * ny < 0) {
+            nx = -nx;
+            ny = -ny;
+          }
+          n.x += nx * 6;
+          n.y += ny * 6;
         }
       }
     }
@@ -278,7 +341,7 @@ async function buildSky(locale: Locale): Promise<Sky> {
       .map((tag) => ({
         id: `tag:${tag.slug}`,
         kind: 'tag' as const,
-        label: tag.name.replaceAll('-', ' '),
+        label: tagLabel(locale, tag.name).replaceAll('-', ' '),
         href: paths.tag(locale, tag.name),
         members: posts.filter((p) => p.data.tags.some((x) => slugify(x) === tag.slug)).map((p) => p.slug),
       })),
@@ -293,21 +356,21 @@ async function buildSky(locale: Locale): Promise<Sky> {
 
   const positions: Record<Orientation, { stars: Map<string, SimNode>; anchors: Map<string, SimNode> }> = {
     land: { stars: new Map(), anchors: new Map() },
+    mid: { stars: new Map(), anchors: new Map() },
     port: { stars: new Map(), anchors: new Map() },
   };
 
-  for (const o of ['land', 'port'] as Orientation[]) {
+  for (const o of ORIENTATIONS) {
     const { bounds, avoid } = HOME[o];
     const nodes: SimNode[] = [];
     const index = new Map<string, number>();
-    const labelMax = o === 'land' ? 200 : 168;
-    const charW = o === 'land' ? 7.4 : 6.6;
+    const L = LABEL[o];
     for (const post of posts) {
       const r = rng(hash(`${post.slug}:${o}`));
       const len = post.data.title.length;
-      // phones clamp labels to two lines (the full title is in the list below)
-      const lines = Math.min(o === 'land' ? 4 : 3, Math.ceil((len * charW) / labelMax));
-      const lw = Math.min(labelMax, len * charW);
+      const labelled = labelledIn(o, post.data.type);
+      const lines = Math.min(L.lines, Math.ceil((len * L.char) / L.max));
+      const lw = labelled ? Math.min(L.max, len * L.char) : 4;
       index.set(post.slug, nodes.length);
       nodes.push({
         id: post.slug,
@@ -317,7 +380,7 @@ async function buildSky(locale: Locale): Promise<Sky> {
         vx: 0,
         vy: 0,
         lw,
-        lh: o === 'land' ? 18 + lines * 20 : 10 + lines * 17,
+        lh: labelled ? 10 + L.meta + lines * L.line : 30,
         r: 10,
         side: 'r',
       });
@@ -333,7 +396,7 @@ async function buildSky(locale: Locale): Promise<Sky> {
         y: bounds.y + r() * bounds.h,
         vx: 0,
         vy: 0,
-        lw: Math.min(o === 'land' ? 320 : 220, anchor.label.length * (big ? 10 : 8.6) + 16),
+        lw: Math.min(o === 'land' ? 320 : 230, anchor.label.length * (big ? 10 : o === 'port' ? 7.6 : 8.6) + 20),
         lh: big ? 30 : 22,
         r: 0,
         side: 'r',
@@ -344,7 +407,7 @@ async function buildSky(locale: Locale): Promise<Sky> {
       links.push({
         a: index.get(e.a)!,
         b: index.get(e.b)!,
-        rest: o === 'land' ? 230 : 120,
+        rest: o === 'land' ? 230 : o === 'mid' ? 150 : 120,
         k: e.kind === 'series' ? 0.08 : 0.04,
       });
     }
@@ -354,18 +417,18 @@ async function buildSky(locale: Locale): Promise<Sky> {
         links.push({
           a: index.get(anchor.id)!,
           b: index.get(m)!,
-          rest: (o === 'land' ? 120 : 70) * (series ? 0.6 : 1),
+          rest: (o === 'land' ? 120 : o === 'mid' ? 90 : 70) * (series ? 0.6 : 1),
           k: series ? 0.07 : 0.03,
         });
       }
     }
-    simulate(nodes, links, bounds, avoid);
+    const segments = edges.map((e) => [index.get(e.a)!, index.get(e.b)!] as [number, number]);
+    simulate(nodes, links, bounds, avoid, segments);
     for (const n of nodes) (n.kind === 'star' ? positions[o].stars : positions[o].anchors).set(n.id, n);
   }
 
   const stars: SkyStar[] = posts.map((post) => {
-    const land = positions.land.stars.get(post.slug)!;
-    const port = positions.port.stars.get(post.slug)!;
+    const at = (o: Orientation) => positions[o].stars.get(post.slug)!;
     const base = post.data.type === 'article' ? 0.45 : post.data.type === 'link' ? 0.22 : 0.12;
     return {
       slug: post.slug,
@@ -378,14 +441,25 @@ async function buildSky(locale: Locale): Promise<Sky> {
       series: post.data.series,
       mag: Math.min(1, base + (0.55 * Math.log2(1 + post.minutes)) / Math.log2(1 + maxMinutes)),
       meta: metaFor(post),
-      pos: { land: { x: land.x, y: land.y }, port: { x: port.x, y: port.y } },
-      side: { land: land.side, port: port.side },
+      fallback: post.fallback,
+      pos: {
+        land: { x: at('land').x, y: at('land').y },
+        mid: { x: at('mid').x, y: at('mid').y },
+        port: { x: at('port').x, y: at('port').y },
+      },
+      side: { land: at('land').side, mid: at('mid').side, port: at('port').side },
     };
   });
   const anchors: SkyAnchor[] = anchorsBase.map((a) => {
-    const land = positions.land.anchors.get(a.id)!;
-    const port = positions.port.anchors.get(a.id)!;
-    return { ...a, pos: { land: { x: land.x, y: land.y }, port: { x: port.x, y: port.y } } };
+    const at = (o: Orientation) => positions[o].anchors.get(a.id)!;
+    return {
+      ...a,
+      pos: {
+        land: { x: at('land').x, y: at('land').y },
+        mid: { x: at('mid').x, y: at('mid').y },
+        port: { x: at('port').x, y: at('port').y },
+      },
+    };
   });
 
   return {
@@ -403,7 +477,7 @@ export interface FrameSpec {
   /** Stars the frame is built around; empty = the whole world. */
   focus?: string[];
   /** Reference stage aspect (w/h) per orientation. */
-  aspect: Record<Orientation, number>;
+  aspect: { land: number; port: number; mid?: number };
   /** Padding around the focus box, in world px. */
   pad?: number;
   /** Minimum frame width as a share of the world width (keeps a single star from filling the frame). */
@@ -414,7 +488,7 @@ export interface FrameSpec {
 
 export function frameFor(sky: Sky, spec: FrameSpec): Record<Orientation, Rect> {
   const out = {} as Record<Orientation, Rect>;
-  for (const o of ['land', 'port'] as Orientation[]) {
+  for (const o of ORIENTATIONS) {
     const world = sky.world[o];
     const focus = spec.focus?.length ? sky.stars.filter((s) => spec.focus!.includes(s.slug)) : [];
     let box: Rect;
@@ -437,7 +511,7 @@ export function frameFor(sky: Sky, spec: FrameSpec): Record<Orientation, Rect> {
       }
     }
     // expand to the stage aspect, centred
-    const aspect = spec.aspect[o];
+    const aspect = spec.aspect[o] ?? spec.aspect.land;
     if (box.w / box.h > aspect) {
       const h = box.w / aspect;
       box.y -= (h - box.h) / 2;
@@ -476,13 +550,19 @@ export const GREEK = [
 ];
 
 /** Neighbours of a post: stars that share a tag or a series with it. */
-export function neighboursOf(sky: Sky, slug: string): string[] {
-  const out = new Set<string>();
-  for (const e of sky.edges) {
-    if (e.a === slug) out.add(e.b);
-    if (e.b === slug) out.add(e.a);
-  }
+export function neighboursOf(sky: Sky, slug: string, max = 5): string[] {
   const me = sky.stars.find((s) => s.slug === slug);
-  if (me) for (const s of sky.stars) if (s.slug !== slug && s.tags.some((tg) => me.tags.includes(tg))) out.add(s.slug);
-  return [...out];
+  if (!me) return [];
+  const t0 = Date.parse(me.date);
+  return sky.stars
+    .filter((s) => s.slug !== slug)
+    .map((s) => {
+      const series = me.series && s.series?.id === me.series.id ? 1 : 0;
+      const shared = s.tags.filter((tg) => me.tags.includes(tg)).length;
+      return { s, score: series * 10 + shared, gap: Math.abs(Date.parse(s.date) - t0) };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.gap - b.gap)
+    .slice(0, max)
+    .map((x) => x.s.slug);
 }
