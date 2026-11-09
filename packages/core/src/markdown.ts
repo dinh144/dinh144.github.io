@@ -1,6 +1,7 @@
 import { unified } from '@astrojs/markdown-remark';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
+import { rehypeFootnotesI18n } from './rehype-footnotes-i18n';
 
 /**
  * Shared Markdown pipeline for every theme (Astro 7: plugins go through the `unified` processor,
@@ -9,7 +10,7 @@ import remarkMath from 'remark-math';
  * so each theme decides how code looks in light and dark mode.
  */
 export const markdown = {
-  processor: unified({ remarkPlugins: [remarkMath], rehypePlugins: [rehypeKatex] }),
+  processor: unified({ remarkPlugins: [remarkMath], rehypePlugins: [rehypeKatex, rehypeFootnotesI18n] }),
   shikiConfig: {
     themes: { light: 'github-light', dark: 'github-dark' },
     defaultColor: false as const,

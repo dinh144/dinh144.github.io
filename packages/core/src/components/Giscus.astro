@@ -2,6 +2,8 @@
 /**
  * Giscus comments, mapped by post slug so every theme (and both languages)
  * share one discussion per post. Renders a short note until the repo/category ids are set.
+ * The widget follows the SITE theme (data-theme on <html>), not just the OS: it starts with the
+ * current theme and switches live on `prefs:change`.
  */
 import { t, type Locale } from '../i18n';
 import { SITE } from '../site';
@@ -9,36 +11,77 @@ import { SITE } from '../site';
 interface Props {
   slug: string;
   locale: Locale;
-  /** A giscus theme name or an absolute URL to a theme CSS file. */
+  /** Giscus theme (name or absolute CSS URL) used when the site is light. */
+  lightTheme?: string;
+  /** Giscus theme (name or absolute CSS URL) used when the site is dark. */
+  darkTheme?: string;
+  /** Shorthand: one Giscus theme for both site themes. */
   theme?: string;
 }
 
-const { slug, locale, theme = 'preferred_color_scheme' } = Astro.props;
+const { slug, locale, theme, lightTheme = theme ?? 'light', darkTheme = theme ?? 'dark_dimmed' } = Astro.props;
 const ready = Boolean(SITE.giscus.repoId && SITE.giscus.categoryId);
 ---
 
 <section class="giscus-wrap" aria-label={t(locale, 'post.comments')}>
   {ready ? (
-    <script
-      is:inline
-      src="https://giscus.app/client.js"
+    <div
+      class="giscus-mount"
       data-repo={SITE.giscus.repo}
       data-repo-id={SITE.giscus.repoId}
       data-category={SITE.giscus.category}
       data-category-id={SITE.giscus.categoryId}
-      data-mapping="specific"
       data-term={slug}
-      data-strict="1"
-      data-reactions-enabled="1"
-      data-emit-metadata="0"
-      data-input-position="top"
-      data-theme={theme}
       data-lang={locale}
-      data-loading="lazy"
-      crossorigin="anonymous"
-      async
-    ></script>
+      data-light={lightTheme}
+      data-dark={darkTheme}
+    ></div>
   ) : (
     <p class="giscus-pending">{t(locale, 'post.commentsPending')}</p>
   )}
 </section>
+
+<script is:inline data-astro-rerun>
+  (function () {
+    var mount = document.querySelector('.giscus-mount');
+    if (!mount || mount.dataset.loaded) return;
+    mount.dataset.loaded = '1';
+    var d = mount.dataset;
+    var pick = function () {
+      return document.documentElement.dataset.theme === 'dark' ? d.dark : d.light;
+    };
+    var s = document.createElement('script');
+    s.src = 'https://giscus.app/client.js';
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    var attrs = {
+      repo: d.repo,
+      'repo-id': d.repoId,
+      category: d.category,
+      'category-id': d.categoryId,
+      mapping: 'specific',
+      term: d.term,
+      strict: '1',
+      'reactions-enabled': '1',
+      'emit-metadata': '0',
+      'input-position': 'top',
+      theme: pick(),
+      lang: d.lang,
+      loading: 'lazy',
+    };
+    Object.keys(attrs).forEach(function (k) {
+      s.setAttribute('data-' + k, attrs[k]);
+    });
+    mount.appendChild(s);
+    if (!window.__giscusThemeSync) {
+      window.__giscusThemeSync = true;
+      document.addEventListener('prefs:change', function () {
+        var frame = document.querySelector('iframe.giscus-frame');
+        var m = document.querySelector('.giscus-mount');
+        if (!frame || !m) return;
+        var theme = document.documentElement.dataset.theme === 'dark' ? m.dataset.dark : m.dataset.light;
+        frame.contentWindow.postMessage({ giscus: { setConfig: { theme: theme } } }, 'https://giscus.app');
+      });
+    }
+  })();
+</script>
