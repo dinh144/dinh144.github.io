@@ -94,9 +94,10 @@ const SPLAT = /* glsl */ `
     vec2 p = vUv - point;
     p.x *= aspect;
     // Ragged rim: the drop's radius wobbles with angle and fine noise, like ink meeting paper fibre.
-    // atan(0, 0) is undefined on some GPUs; one NaN texel would spread through the whole wash.
-    float ang = atan(p.y, p.x + 1e-5);
-    float wob = 1.0 + ragged * (0.6 * (fbm(vec2(ang * 1.6 + seed, seed)) - 0.5) + 0.22 * (fbm(p * 38.0 + seed) - 0.5));
+    // The angle is sampled as a point on a circle, so the noise wraps without a seam at +-pi
+    // (atan() would cut a hairline through every drop). The tiny epsilon keeps the centre texel finite.
+    vec2 dir = p / (length(p) + 1e-5);
+    float wob = 1.0 + ragged * (0.6 * (fbm(dir * 1.7 + seed) - 0.5) + 0.22 * (fbm(p * 38.0 + seed) - 0.5));
     float r = radius * wob * wob;
     vec3 base = texture2D(uTarget, vUv).xyz;
     vec3 add = exp(-dot(p, p) / max(r, 1e-6)) * color;
@@ -687,6 +688,8 @@ export function createInkField(canvas: HTMLCanvasElement, theme: InkTheme): InkF
           0.0018 * size,
         );
       }
+      // The pushes hollow the centre out; a smaller, denser core keeps the drop's heart dark, as on paper.
+      splat(dye, dyeW, dyeH, x, y, [0.55 * amount * (1 - accent), 0.6 * amount * accent, 0], r * 0.16, 0.6);
       wake();
     },
     scroll(dy) {
