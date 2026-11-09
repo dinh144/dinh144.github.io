@@ -1,0 +1,37 @@
+---
+import Search from '@blog/core/components/Search.astro';
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, tagsOf } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import PlateHead from '../../components/PlateHead.astro';
+import Layout from '../../layouts/Layout.astro';
+import { frameFor, getSky } from '../../lib/sky';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const tags = tagsOf(await getPosts(locale));
+const sky = await getSky(locale);
+const frame = frameFor(sky, { aspect: { land: 1.55, port: 1.5 } });
+---
+
+<Layout locale={locale} title={t(locale, 'search.title')} noindex page="search">
+  <PlateHead title={t(locale, 'search.title')} caption={t(locale, 'search.hint')} sky={sky} frame={frame} anchors="all" quiet />
+  <div class="search-wrap wrap">
+    <Search locale={locale} />
+    <nav class="search-regions" aria-labelledby="regions-title">
+      <h2 id="regions-title" class="search-regions-title">
+        {locale === 'vi' ? 'Hoặc dạo theo chủ đề' : 'Or wander by topic'}
+      </h2>
+      <ul class="tags">
+        {tags.map((tag) => (
+          <li>
+            <a href={paths.tag(locale, tag.name)}>
+              #{tag.name} <span class="tag-n">{tag.count}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</Layout>

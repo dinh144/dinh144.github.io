@@ -1,0 +1,127 @@
+---
+import { formatDate, t, type Locale } from '@blog/core/i18n';
+import { getPosts } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import Icon from '../../components/Icon.astro';
+import PostCard from '../../components/PostCard.astro';
+import SkyStage from '../../components/SkyStage.astro';
+import StarGlyph from '../../components/StarGlyph.astro';
+import Layout from '../../layouts/Layout.astro';
+import { WORLD, getSky } from '../../lib/sky';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const posts = await getPosts(locale);
+const sky = await getSky(locale);
+const vi = locale === 'vi';
+const tagline = vi
+  ? 'Ghi chép về lập trình, máy học và những gì mình học được mỗi tuần.'
+  : 'Notes on programming, machine learning and what I learn each week.';
+const counts = sky.counts;
+const stats = vi
+  ? `${counts.stars} ngôi sao · ${counts.topics} chủ đề · ${counts.constellations} chòm sao`
+  : `${counts.stars} stars · ${counts.topics} topics · ${counts.constellations} ${counts.constellations === 1 ? 'constellation' : 'constellations'}`;
+const frame = { land: { x: 0, y: 0, ...WORLD.land }, port: { x: 0, y: 0, ...WORLD.port } };
+const latest = posts[0];
+---
+
+<Layout locale={locale} title={SITE.name} description={tagline} page="home">
+  <section class="hero" aria-labelledby="hero-title">
+    <SkyStage sky={sky} frame={frame} variant="hero" anchors="all" />
+    <div class="hero-copy">
+      <h1 id="hero-title" class="display">
+        {vi ? (
+          <>
+            Bản đồ những gì <em>mình biết</em>.
+          </>
+        ) : (
+          <>
+            A map of what <em>I know</em>.
+          </>
+        )}
+      </h1>
+      <p class="hero-lede">{tagline}</p>
+      <p class="hero-hint">
+        <span class="hint-fine">{vi ? 'Di chuột' : 'Hover'}</span>
+        <span class="hint-coarse">{vi ? 'Chạm' : 'Tap'}</span>
+        {vi ? ' vào một ngôi sao để bay tới bài viết.' : ' a star to fly to its post.'}
+      </p>
+      <div class="hero-actions">
+        {latest && (
+          <a class="btn btn--solid" href={paths.post(latest)} data-star={latest.slug}>
+            {vi ? 'Đọc bài mới nhất' : 'Read the latest'}
+            <Icon name="arrow-right" size={18} />
+          </a>
+        )}
+        <a class="btn" href="#catalogue">
+          {vi ? 'Xem danh mục' : 'See the catalogue'}
+          <Icon name="arrow-down" size={18} />
+        </a>
+      </div>
+      <p class="hero-stats">{stats}</p>
+    </div>
+    <aside class="legend" aria-label={vi ? 'Chú giải' : 'Legend'}>
+      <ul>
+        <li>
+          <StarGlyph type="article" size={16} />
+          {t(locale, 'type.article')}
+        </li>
+        <li>
+          <StarGlyph type="note" size={16} />
+          {t(locale, 'type.note')}
+        </li>
+        <li>
+          <StarGlyph type="link" size={16} />
+          {t(locale, 'type.link')}
+        </li>
+        <li>
+          <StarGlyph type="tag" size={16} />
+          {vi ? 'Chung chủ đề' : 'Shared topic'}
+        </li>
+        <li>
+          <StarGlyph type="series" size={16} />
+          {vi ? 'Chuỗi bài' : 'Series'}
+        </li>
+      </ul>
+      <p>{vi ? 'Sao càng to, bài càng dài.' : 'Bigger star, longer read.'}</p>
+    </aside>
+  </section>
+
+  <section class="catalogue wrap" id="catalogue" aria-labelledby="catalogue-title">
+    <header class="catalogue-head">
+      <h2 id="catalogue-title" class="section-title">
+        {vi ? 'Danh mục' : 'Catalogue'}
+      </h2>
+      <p class="catalogue-note">
+        {vi ? `${posts.length} bài, mới nhất trước` : `${posts.length} entries, newest first`}
+        {latest && (
+          <>
+            {' · '}
+            {vi ? 'cập nhật ' : 'updated '}
+            <time datetime={latest.data.date.toISOString()}>{formatDate(latest.data.date, locale)}</time>
+          </>
+        )}
+      </p>
+    </header>
+    <nav class="filters" aria-label={vi ? 'Lọc theo loại' : 'Filter by type'}>
+      <a href={paths.home(locale)} aria-current="page">
+        {t(locale, 'nav.all')}
+      </a>
+      <a href={paths.section(locale, 'posts')}>{t(locale, 'nav.posts')}</a>
+      <a href={paths.seriesList(locale)}>{t(locale, 'nav.series')}</a>
+      <a href={paths.section(locale, 'notes')}>{t(locale, 'nav.notes')}</a>
+      <a href={paths.section(locale, 'links')}>{t(locale, 'nav.links')}</a>
+    </nav>
+    {posts.length ? (
+      <ol class="stream">
+        {posts.map((post) => (
+          <PostCard post={post} />
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'list.empty')}</p>
+    )}
+  </section>
+</Layout>

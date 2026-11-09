@@ -1,0 +1,34 @@
+---
+import { t } from '@blog/core/i18n';
+import { paths } from '@blog/core/routes';
+import SkyStage from '../components/SkyStage.astro';
+import Layout from '../layouts/Layout.astro';
+import { WORLD, getSky } from '../lib/sky';
+
+const sky = await getSky('vi');
+const frame = { land: { x: 0, y: 0, ...WORLD.land }, port: { x: 0, y: 0, ...WORLD.port } };
+---
+
+<Layout locale="vi" title={t('vi', 'notfound.title')} noindex page="notfound">
+  <section class="lost">
+    <SkyStage sky={sky} frame={frame} variant="hero" anchors="none" focus={[]} />
+    <div class="lost-copy wrap">
+      <p class="lost-code" aria-hidden="true">
+        404
+      </p>
+      <h1 class="display">{t('vi', 'notfound.title')}</h1>
+      <p class="plate-caption">Ngôi sao này không có trên bản đồ.</p>
+      <p class="plate-caption" lang="en">
+        {t('en', 'notfound.title')}. This star is not on the chart.
+      </p>
+      <p class="hero-actions">
+        <a class="btn btn--solid" href={paths.home('vi')}>
+          {t('vi', 'notfound.back')}
+        </a>
+        <a class="btn" href={paths.home('en')} lang="en">
+          {t('en', 'notfound.back')}
+        </a>
+      </p>
+    </div>
+  </section>
+</Layout>

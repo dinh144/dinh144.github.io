@@ -1,0 +1,55 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getSeriesList } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import PlateHead from '../../../components/PlateHead.astro';
+import SkyStage from '../../../components/SkyStage.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { GREEK, frameFor, getSky } from '../../../lib/sky';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const list = await getSeriesList(locale);
+const sky = await getSky(locale);
+const vi = locale === 'vi';
+const caption = vi
+  ? 'Những bài viết nối tiếp nhau, vẽ thành chòm sao có tên.'
+  : 'Posts written in sequence, drawn as named constellations.';
+---
+
+<Layout locale={locale} title={t(locale, 'nav.series')} page="series">
+  <PlateHead title={t(locale, 'nav.series')} caption={caption} />
+  <section class="catalogue wrap" aria-label={t(locale, 'nav.series')}>
+    {list.length ? (
+      <ol class="series-list">
+        {list.map((series) => {
+          const focus = series.parts.map((p) => p.slug);
+          const frame = frameFor(sky, { focus, aspect: { land: 2.2, port: 1.5 }, minShare: 0.4 });
+          return (
+            <li class="series-card">
+              <SkyStage sky={sky} frame={frame} focus={focus} only anchors="focus" variant="mini" keepStatic draw />
+              <div class="series-card-body">
+                <h2 class="entry-title">
+                  <a href={paths.series(locale, series.id)}>{series.title}</a>
+                </h2>
+                {series.description && <p class="entry-desc">{series.description}</p>}
+                <p class="entry-meta">
+                  <span>{t(locale, 'series.parts', { n: series.parts.length })}</span>
+                  <span>
+                    {series.parts
+                      .map((p) => `${GREEK[(p.data.series?.part ?? 1) - 1]} ${p.data.title}`)
+                      .slice(0, 3)
+                      .join(' · ')}
+                  </span>
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'series.empty')}</p>
+    )}
+  </section>
+</Layout>
