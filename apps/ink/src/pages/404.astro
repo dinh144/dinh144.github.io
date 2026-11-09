@@ -1,0 +1,31 @@
+---
+import { t } from '@blog/core/i18n';
+import { paths } from '@blog/core/routes';
+import Icon from '../components/Icon.astro';
+import Tone from '../components/Tone.astro';
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout locale="vi" title={t('vi', 'notfound.title')} noindex page="page">
+  <section class="lost" data-resist>
+    <p class="big" aria-hidden="true">
+      404
+    </p>
+    <h1 class="page-title">
+      <Tone text={t('vi', 'notfound.title')} mode="land" intro />
+    </h1>
+    <p class="page-dek" lang="en">
+      {t('en', 'notfound.title')}. The ink ran off this page.
+    </p>
+    <p class="lost-links">
+      <a class="read-link" href={paths.home('vi')}>
+        <Icon name="arrow-left" />
+        {t('vi', 'notfound.back')}
+      </a>
+      <a class="read-link" href={paths.home('en')} lang="en">
+        <Icon name="arrow-left" />
+        {t('en', 'notfound.back')}
+      </a>
+    </p>
+  </section>
+</Layout>

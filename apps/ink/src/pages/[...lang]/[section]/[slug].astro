@@ -1,0 +1,166 @@
+---
+import Giscus from '@blog/core/components/Giscus.astro';
+import { formatDate, otherLocale, t, type Locale } from '@blog/core/i18n';
+import { getPosts, getSeriesFor, neighbours, type Post } from '@blog/core/posts';
+import { paths, postPaths } from '@blog/core/routes';
+import { render } from 'astro:content';
+import Icon from '../../../components/Icon.astro';
+import Tone from '../../../components/Tone.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { chapterNumbers, pad2 } from '../../../lib/chapters';
+
+export const getStaticPaths = () => postPaths();
+
+const { locale, post } = Astro.props as { locale: Locale; post: Post };
+const { data } = post;
+const { Content, headings } = await render(post.entry);
+const series = await getSeriesFor(post);
+const all = await getPosts(locale);
+const { prev, next } = neighbours(all, post);
+const numbers = chapterNumbers(all);
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const other = otherLocale(locale);
+const hasOther = post.available.includes(other);
+const lang = post.contentLocale;
+const host = data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
+const long = data.title.length > 48;
+---
+
+<Layout
+  locale={locale}
+  title={data.title}
+  description={data.description}
+  image={paths.og(locale, post.slug)}
+  type="article"
+  published={data.date}
+  available={post.available}
+  reading
+  page="post"
+>
+  <article class="post" data-type={data.type}>
+    <header class="post-head" data-resist>
+      <p class="post-no no" aria-hidden="true" data-pagefind-ignore>
+        <span class="sign">№</span>
+        {pad2(numbers.get(post.slug))}
+      </p>
+      <h1 class:list={['post-title', { long }]} lang={lang}>
+        <Tone text={data.title} mode="land" intro />
+      </h1>
+      {data.description && (
+        <p class="post-dek" lang={lang}>
+          {data.description}
+        </p>
+      )}
+      <p class="meta">
+        <span class="hl">
+          {data.series && series
+            ? `${series.title} · ${t(locale, 'post.part', { n: data.series.part, total: series.parts.length })}`
+            : t(locale, `type.${data.type}`)}
+        </span>
+        <time datetime={data.date.toISOString()}>{formatDate(data.date, locale)}</time>
+        {data.updated && <span>{t(locale, 'post.updated', { date: formatDate(data.updated, locale) })}</span>}
+        <span>{t(locale, 'post.minutes', { n: post.minutes })}</span>
+        {hasOther && (
+          <a href={paths.post({ ...post, locale: other })} hreflang={other} lang={other}>
+            {t(locale, 'post.readIn')}
+          </a>
+        )}
+      </p>
+    </header>
+
+    <div class="post-grid">
+      <div class="prose" lang={lang} data-resist>
+        {post.fallback && (
+          <p class="notice" lang={locale}>
+            <Icon name="note" />
+            <span>{t(locale, 'post.fallback')}</span>
+          </p>
+        )}
+        {data.aiDraft && (
+          <p class="notice" lang={locale}>
+            <Icon name="note" />
+            <span>{t(locale, 'post.aiDraft')}</span>
+          </p>
+        )}
+        {series && (
+          <nav class="series-box" aria-label={series.title} lang={locale}>
+            <p class="series-name">
+              <a href={paths.series(locale, series.id)}>{series.title}</a>
+              <span class="meta">{t(locale, 'series.parts', { n: series.parts.length })}</span>
+            </p>
+            <ol>
+              {series.parts.map((part) => (
+                <li>
+                  {part.slug === post.slug ? (
+                    <strong aria-current="page">{part.data.title}</strong>
+                  ) : (
+                    <a href={paths.post(part)}>{part.data.title}</a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        {data.type === 'link' && data.link && (
+          <p>
+            <a class="visit" href={data.link} rel="noopener" lang={locale}>
+              {t(locale, 'post.visitLink')} · {host}
+              <Icon name="external" />
+            </a>
+          </p>
+        )}
+        <Content />
+        {data.tags.length > 0 && (
+          <ul class="tags" aria-label={t(locale, 'post.tags')} lang={locale}>
+            {data.tags.map((tag) => (
+              <li>
+                <a href={paths.tag(locale, tag)}>#{tag}</a>
+              </li>
+            ))}
+          </ul>
+        )}
+        <nav class="pager" aria-label={`${t(locale, 'post.prev')} / ${t(locale, 'post.next')}`} lang={locale}>
+          {prev ? (
+            <a href={paths.post(prev)} rel="prev">
+              <span class="dir">
+                ← {t(locale, 'post.prev')} · № {pad2(numbers.get(prev.slug))}
+              </span>
+              <span class="t" lang={prev.contentLocale}>
+                {prev.data.title}
+              </span>
+            </a>
+          ) : (
+            <span />
+          )}
+          {next && (
+            <a class="next" href={paths.post(next)} rel="next">
+              <span class="dir">
+                {t(locale, 'post.next')} · № {pad2(numbers.get(next.slug))} →
+              </span>
+              <span class="t" lang={next.contentLocale}>
+                {next.data.title}
+              </span>
+            </a>
+          )}
+        </nav>
+        {data.comments && <Giscus slug={post.slug} locale={locale} />}
+      </div>
+      {toc.length > 1 && (
+        <aside class="toc" aria-label={t(locale, 'post.toc')} lang={locale} data-resist>
+          <details class="toc-fold" open>
+            <summary class="toc-label">{t(locale, 'post.toc')}</summary>
+            <ol>
+            {toc.map((h) => (
+              <li class={`depth-${h.depth}`}>
+                <a href={`#${h.slug}`} lang={lang}>
+                  {h.text}
+                </a>
+              </li>
+            ))}
+            </ol>
+          </details>
+        </aside>
+      )}
+    </div>
+  </article>
+</Layout>

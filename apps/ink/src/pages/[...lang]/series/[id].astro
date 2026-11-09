@@ -1,0 +1,32 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, type SeriesInfo } from '@blog/core/posts';
+import { seriesPaths } from '@blog/core/routes';
+import PostCard from '../../../components/PostCard.astro';
+import Tone from '../../../components/Tone.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { chapterNumbers } from '../../../lib/chapters';
+
+export const getStaticPaths = () => seriesPaths();
+
+const { locale, series } = Astro.props as { locale: Locale; series: SeriesInfo };
+const numbers = chapterNumbers(await getPosts(locale));
+---
+
+<Layout locale={locale} title={series.title} description={series.description} page="list">
+  <header class="page-head" data-resist>
+    <h1 class="page-title">
+      <Tone text={series.title} mode="land" intro />
+    </h1>
+    {series.description && <p class="page-dek">{series.description}</p>}
+    <p class="meta">
+      <span class="hl">{t(locale, 'nav.series')}</span>
+      <span>{t(locale, 'series.parts', { n: series.parts.length })}</span>
+    </p>
+  </header>
+  <ol class="stream">
+    {series.parts.map((post, i) => (
+      <PostCard post={post} no={numbers.get(post.slug)} seed={i + 31} />
+    ))}
+  </ol>
+</Layout>

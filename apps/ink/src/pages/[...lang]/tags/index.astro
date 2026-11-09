@@ -1,0 +1,35 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, tagsOf } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import Tone from '../../../components/Tone.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const tags = tagsOf(await getPosts(locale));
+---
+
+<Layout locale={locale} title={t(locale, 'tags.title')} page="list">
+  <header class="page-head" data-resist>
+    <h1 class="page-title">
+      <Tone text={t(locale, 'tags.title')} mode="land" intro />
+    </h1>
+    <p class="meta">
+      <span>
+        {tags.length} {locale === 'vi' ? 'chủ đề' : 'topics'}
+      </span>
+    </p>
+  </header>
+  <ul class="tags tag-cloud" data-resist>
+    {tags.map((tag) => (
+      <li>
+        <a href={paths.tag(locale, tag.name)}>
+          #{tag.name}
+          <span class="count">{tag.count}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>

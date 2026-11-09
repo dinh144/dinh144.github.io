@@ -1,0 +1,78 @@
+---
+/**
+ * Theme, sound and reading-mode toggles. Reading mode only shows on article pages.
+ * State lives in @blog/core/client/preferences (data attributes on <html>).
+ */
+import { t, type Locale } from '@blog/core/i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  locale: Locale;
+  reading?: boolean;
+}
+const { locale, reading = false } = Astro.props;
+---
+
+<button
+  type="button"
+  class="icon-btn theme-icon"
+  data-pref="theme"
+  aria-label={t(locale, 'prefs.theme')}
+  title={t(locale, 'prefs.theme')}
+>
+  <Icon name="moon" class="moon" />
+  <Icon name="sun" class="sun" />
+</button>
+<button
+  type="button"
+  class="icon-btn"
+  data-pref="sound"
+  aria-pressed="false"
+  aria-label={t(locale, 'prefs.sound')}
+  title={t(locale, 'prefs.sound')}
+>
+  <Icon name="sound" />
+</button>
+{reading && (
+  <button
+    type="button"
+    class="icon-btn"
+    data-pref="reading"
+    aria-pressed="false"
+    aria-label={t(locale, 'prefs.reading')}
+    title={t(locale, 'prefs.readingHint')}
+  >
+    <Icon name="reading" />
+  </button>
+)}
+<script>
+  import { readPrefs, toggleTheme, togglePref } from '@blog/core/client/preferences';
+  import { tick } from '@blog/core/client/sound';
+
+  function sync() {
+    const prefs = readPrefs();
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-pref="sound"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(prefs.sound)));
+    document
+      .querySelectorAll<HTMLButtonElement>('[data-pref="reading"]')
+      .forEach((b) => b.setAttribute('aria-pressed', String(prefs.reading)));
+  }
+
+  function bind() {
+    document.querySelectorAll<HTMLButtonElement>('[data-pref]').forEach((button) => {
+      if (button.dataset.bound) return;
+      button.dataset.bound = '1';
+      button.addEventListener('click', () => {
+        const kind = button.dataset.pref;
+        if (kind === 'theme') toggleTheme();
+        if (kind === 'sound' || kind === 'reading') togglePref(kind);
+        sync();
+        tick();
+      });
+    });
+    sync();
+  }
+
+  document.addEventListener('astro:page-load', bind);
+</script>
