@@ -1,0 +1,34 @@
+---
+/**
+ * A dashed rule inked by hand: dashes vary a little in length, weight and height, like a
+ * brush-pen line. Seeded, so every row keeps its own line between builds. Fixed 1800px wide
+ * and clipped by the container, so dashes never stretch.
+ */
+interface Props {
+  seed?: number;
+}
+const { seed = 1 } = Astro.props;
+let s = (seed * 2654435761) >>> 0;
+const rand = () => {
+  s = (s + 0x6d2b79f5) >>> 0;
+  let t = s;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+const dashes: string[] = [];
+let x = rand() * 6;
+while (x < 1800) {
+  const len = 7 + rand() * 9;
+  const h = 1.15 + rand() * 0.75;
+  const y = 3 - h / 2 + (rand() - 0.5) * 0.7;
+  dashes.push(
+    `<rect x="${x.toFixed(1)}" y="${y.toFixed(2)}" width="${len.toFixed(1)}" height="${h.toFixed(2)}" rx="${(h / 2).toFixed(2)}"/>`,
+  );
+  x += len + 5 + rand() * 4;
+}
+---
+
+<span class="ink-rule" aria-hidden="true">
+  <svg width="1800" height="6" viewBox="0 0 1800 6" fill="currentColor" set:html={dashes.join('')} />
+</span>

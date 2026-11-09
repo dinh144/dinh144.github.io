@@ -1,0 +1,56 @@
+---
+/** One stroke icon family (1.6px, round caps), drawn for this theme. Decorative: always aria-hidden. */
+interface Props {
+  name: 'search' | 'moon' | 'sun' | 'sound' | 'reading' | 'arrow' | 'arrow-left' | 'external' | 'drop' | 'note';
+  class?: string;
+}
+const { name, class: cls } = Astro.props;
+---
+
+<svg
+  class={cls}
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.6"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  focusable="false"
+>
+  {name === 'search' && (
+    <>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M15.5 15.5 20 20" />
+    </>
+  )}
+  {name === 'moon' && <path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1Z" />}
+  {name === 'sun' && (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+    </>
+  )}
+  {name === 'sound' && (
+    <>
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z" />
+      <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.6 7.6 0 0 1 0 11" />
+    </>
+  )}
+  {name === 'reading' && (
+    <>
+      <path d="M12 6.5C10 5 7.5 4.5 4 4.5v13c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2v-13c-3.5 0-6 .5-8 2Z" />
+      <path d="M12 6.5v13" />
+    </>
+  )}
+  {name === 'arrow' && <path d="M4.5 12h15M14 6.5l5.5 5.5-5.5 5.5" />}
+  {name === 'arrow-left' && <path d="M19.5 12h-15M10 6.5 4.5 12l5.5 5.5" />}
+  {name === 'external' && <path d="M8 16 16.5 7.5M9.5 7.5h7v7" />}
+  {name === 'drop' && <path d="M12 3.5c3.2 4 5.5 7.1 5.5 10a5.5 5.5 0 0 1-11 0c0-2.9 2.3-6 5.5-10Z" />}
+  {name === 'note' && (
+    <>
+      <path d="M12 3.5c3.2 4 5.5 7.1 5.5 10a5.5 5.5 0 0 1-11 0c0-2.9 2.3-6 5.5-10Z" />
+      <path d="M12 11v3.2M12 16.6v.1" />
+    </>
+  )}
+</svg>

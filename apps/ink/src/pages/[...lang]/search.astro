@@ -1,0 +1,23 @@
+---
+import Search from '@blog/core/components/Search.astro';
+import { t, type Locale } from '@blog/core/i18n';
+import { localePaths } from '@blog/core/routes';
+import Tone from '../../components/Tone.astro';
+import Layout from '../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+---
+
+<Layout locale={locale} title={t(locale, 'search.title')} noindex page="page">
+  <header class="page-head" data-resist>
+    <h1 class="page-title">
+      <Tone text={t(locale, 'search.title')} mode="land" intro />
+    </h1>
+    <p class="page-dek">{t(locale, 'search.hint')}</p>
+  </header>
+  <div class="search-box" data-resist>
+    <Search locale={locale} />
+  </div>
+</Layout>

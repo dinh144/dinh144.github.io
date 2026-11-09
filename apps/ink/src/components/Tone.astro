@@ -1,0 +1,26 @@
+---
+/**
+ * A line of display text with the tone-mark drop (see ../lib/tone.ts).
+ * `intro` plays on page load (CSS only, motion allowed); without it the text waits
+ * for the scroll choreography to set data-tone="play", or simply stays still.
+ */
+import { splitTone, toneLength, type ToneMode } from '../lib/tone';
+
+interface Props {
+  text: string;
+  mode?: ToneMode;
+  intro?: boolean;
+  /** Extra delay before the line starts, in ms (CSS custom property). */
+  delay?: number;
+}
+const { text, mode = 'marks', intro = false, delay = 0 } = Astro.props;
+const html = splitTone(text, mode);
+---
+
+<span
+  class="tone"
+  data-mode={mode}
+  data-tone={intro ? 'intro' : undefined}
+  style={`--n:${toneLength(text)};--d:${delay}ms`}
+  set:html={html}
+/>

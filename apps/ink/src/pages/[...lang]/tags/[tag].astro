@@ -1,0 +1,33 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, type Post, type TagInfo } from '@blog/core/posts';
+import { paths, tagPaths } from '@blog/core/routes';
+import PostCard from '../../../components/PostCard.astro';
+import Tone from '../../../components/Tone.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { chapterNumbers } from '../../../lib/chapters';
+
+export const getStaticPaths = () => tagPaths();
+
+const { locale, tag, posts } = Astro.props as { locale: Locale; tag: TagInfo; posts: Post[] };
+const numbers = chapterNumbers(await getPosts(locale));
+---
+
+<Layout locale={locale} title={`#${tag.name}`} page="list">
+  <header class="page-head" data-resist>
+    <h1 class="page-title">
+      <Tone text={`#${tag.name}`} mode="land" intro />
+    </h1>
+    <p class="meta">
+      <a href={paths.tags(locale)}>{t(locale, 'tags.title')}</a>
+      <span>
+        {posts.length} {locale === 'vi' ? 'bài' : posts.length === 1 ? 'post' : 'posts'}
+      </span>
+    </p>
+  </header>
+  <ol class="stream">
+    {posts.map((post, i) => (
+      <PostCard post={post} no={numbers.get(post.slug)} seed={i + 41} />
+    ))}
+  </ol>
+</Layout>

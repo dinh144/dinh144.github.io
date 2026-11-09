@@ -1,0 +1,107 @@
+---
+import { formatDate, t, type Locale } from '@blog/core/i18n';
+import { getPosts, getSeriesList } from '@blog/core/posts';
+import { BASE, localePaths, paths } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import Icon from '../../components/Icon.astro';
+import PostCard from '../../components/PostCard.astro';
+import Tone from '../../components/Tone.astro';
+import Layout from '../../layouts/Layout.astro';
+import { chapterNumbers, pad2 } from '../../lib/chapters';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const posts = await getPosts(locale);
+const series = await getSeriesList(locale);
+const numbers = chapterNumbers(posts);
+const latest = posts[0];
+const tagline =
+  locale === 'vi'
+    ? 'Ghi chép về lập trình, máy học và những gì mình học được mỗi tuần.'
+    : 'Notes on programming, machine learning and what I learn each week.';
+const count = (section: string) => posts.filter((p) => p.section === section).length;
+const filters = [
+  { href: paths.home(locale), label: t(locale, 'nav.all'), n: posts.length, current: true },
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts'), n: count('posts') },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series'), n: series.length },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes'), n: count('notes') },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links'), n: count('links') },
+];
+const streamTitle = locale === 'vi' ? 'Mọi trang đã viết' : 'Every page so far';
+const readLabel = locale === 'vi' ? 'Đọc bài' : 'Read it';
+const scrollLabel = locale === 'vi' ? 'Cuộn để xem mọi bài' : 'Scroll for every post';
+---
+
+<Layout locale={locale} title={SITE.name} description={tagline} page="home">
+  <section class="hero" aria-labelledby="hero-tagline">
+    <div class="ink-still" aria-hidden="true">
+      <img class="still-light" src={`${BASE}/tex/still-light.webp`} alt="" width="680" height="900" loading="lazy" decoding="async" />
+      <img class="still-dark" src={`${BASE}/tex/still-dark.webp`} alt="" width="680" height="900" loading="lazy" decoding="async" />
+    </div>
+    <h1 class="hero-tagline" id="hero-tagline" data-resist>
+      {tagline}
+    </h1>
+    {latest && (
+      <article class="hero-feature" lang={latest.contentLocale}>
+        <p class="hero-no no" aria-hidden="true" data-pagefind-ignore>
+          <span class="sign">№</span>
+          {pad2(numbers.get(latest.slug))}
+        </p>
+        <h2 class="hero-title" data-resist>
+          <a href={paths.post(latest)}>
+            <Tone text={latest.data.title} mode="write" intro delay={120} />
+          </a>
+        </h2>
+        <div class="hero-foot" data-resist>
+          {latest.data.description && <p class="hero-dek">{latest.data.description}</p>}
+          <div class="hero-cta">
+            <p class="meta" lang={locale}>
+              <span>{t(locale, `type.${latest.data.type}`)}</span>
+              <time datetime={latest.data.date.toISOString()}>{formatDate(latest.data.date, locale)}</time>
+              {latest.data.type === 'article' && <span>{t(locale, 'post.minutes', { n: latest.minutes })}</span>}
+            </p>
+            <a
+              class="read-link"
+              href={paths.post(latest)}
+              lang={locale}
+              aria-label={`${readLabel}: ${latest.data.title}`}
+            >
+              {readLabel}
+              <Icon name="arrow" />
+            </a>
+          </div>
+        </div>
+      </article>
+    )}
+    <p class="hero-scroll meta" aria-hidden="true" data-resist>
+      <span class="drip"></span>
+      {scrollLabel}
+    </p>
+  </section>
+
+  <section aria-labelledby="stream-title">
+    <div class="section-head" data-resist>
+      <h2 class="section-title" id="stream-title">
+        <Tone text={streamTitle} />
+      </h2>
+      <nav class="filters" aria-label={locale === 'vi' ? 'Lọc theo loại' : 'Filter by kind'}>
+        {filters.map((f) => (
+          <a href={f.href} aria-current={f.current ? 'page' : undefined}>
+            {f.label}
+            <sup>{f.n}</sup>
+          </a>
+        ))}
+      </nav>
+    </div>
+    {posts.length ? (
+      <ol class="stream">
+        {posts.map((post, i) => (
+          <PostCard post={post} no={numbers.get(post.slug)} seed={i + 3} />
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'list.empty')}</p>
+    )}
+  </section>
+</Layout>

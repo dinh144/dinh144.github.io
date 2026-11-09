@@ -1,0 +1,58 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getSeriesList } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import InkRule from '../../../components/InkRule.astro';
+import Tone from '../../../components/Tone.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { pad2 } from '../../../lib/chapters';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const list = await getSeriesList(locale);
+const dek =
+  locale === 'vi' ? 'Những bài viết đi cùng nhau, đọc theo thứ tự.' : 'Posts that belong together, read in order.';
+---
+
+<Layout locale={locale} title={t(locale, 'nav.series')} page="list">
+  <header class="page-head" data-resist>
+    <h1 class="page-title">
+      <Tone text={t(locale, 'nav.series')} mode="land" intro />
+    </h1>
+    <p class="page-dek">{dek}</p>
+  </header>
+  {list.length ? (
+    <ol class="stream">
+      {list.map((series, i) => (
+        <li class="entry series-row" data-reveal>
+          <div class="entry-no no" aria-hidden="true" data-pagefind-ignore>
+            <span class="sign">№</span>
+            {pad2(list.length - i)}
+          </div>
+          <div class="entry-body">
+            <h2 class="entry-title">
+              <a href={paths.series(locale, series.id)}>
+                <Tone text={series.title} />
+              </a>
+            </h2>
+            {series.description && <p class="entry-dek">{series.description}</p>}
+            <ol class="series-parts">
+              {series.parts.map((part) => (
+                <li lang={part.contentLocale}>{part.data.title}</li>
+              ))}
+            </ol>
+          </div>
+          <div class="entry-side">
+            <p class="meta">
+              <span class="entry-type">{t(locale, 'series.parts', { n: series.parts.length })}</span>
+            </p>
+          </div>
+          <InkRule seed={i + 21} />
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <p class="empty">{t(locale, 'series.empty')}</p>
+  )}
+</Layout>

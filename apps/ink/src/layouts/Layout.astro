@@ -1,0 +1,160 @@
+---
+import '@fontsource/be-vietnam-pro/latin-500.css';
+import '@fontsource/be-vietnam-pro/vietnamese-500.css';
+import '@fontsource/be-vietnam-pro/latin-700.css';
+import '@fontsource/be-vietnam-pro/vietnamese-700.css';
+import '@fontsource/be-vietnam-pro/latin-800.css';
+import '@fontsource/be-vietnam-pro/vietnamese-800.css';
+import '@fontsource-variable/literata/opsz.css';
+import '@fontsource-variable/literata/opsz-italic.css';
+import '@fontsource-variable/source-code-pro/wght.css';
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import bvpLatin800 from '@fontsource/be-vietnam-pro/files/be-vietnam-pro-latin-800-normal.woff2?url';
+import bvpViet800 from '@fontsource/be-vietnam-pro/files/be-vietnam-pro-vietnamese-800-normal.woff2?url';
+import literataLatin from '@fontsource-variable/literata/files/literata-latin-opsz-normal.woff2?url';
+import Analytics from '@blog/core/components/Analytics.astro';
+import PrefsInit from '@blog/core/components/PrefsInit.astro';
+import Seo from '@blog/core/components/Seo.astro';
+import { otherLocale, t, type Locale } from '@blog/core/i18n';
+import { paths, switchLocale, unlocalize } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import { ClientRouter } from 'astro:transitions';
+import Icon from '../components/Icon.astro';
+import PrefsControls from '../components/PrefsControls.astro';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  published?: Date;
+  available?: Locale[];
+  /** Article page: shows the reading-progress line. (The reading toggle is on every page.) */
+  reading?: boolean;
+  noindex?: boolean;
+  /** Page kind: tunes the ink field (home blooms, articles keep ink in the margins). */
+  page?: 'home' | 'post' | 'list' | 'page';
+}
+
+const { locale, reading = false, page = 'page', ...seo } = Astro.props;
+const here = unlocalize(Astro.url.pathname);
+const other = otherLocale(locale);
+const otherHref =
+  seo.available && !seo.available.includes(other) ? paths.home(other) : switchLocale(Astro.url.pathname, other);
+const nav = [
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts'), match: '/posts/' },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series'), match: '/series/' },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes'), match: '/notes/' },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links'), match: '/links/' },
+  { href: paths.about(locale), label: t(locale, 'nav.about'), match: '/about/' },
+];
+const signOff =
+  locale === 'vi'
+    ? 'Viết bằng tiếng Việt và tiếng Anh, in trên giấy ấm, mực vẫn còn ướt.'
+    : 'Written in Vietnamese and English, set on warm paper while the ink is still wet.';
+---
+
+<!doctype html>
+<html lang={locale} data-page={page}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#120e0f" media="(prefers-color-scheme: dark)" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='4' fill='%23a50e1a' transform='rotate(-3 16 16)'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='800' font-size='20' text-anchor='middle' fill='%23fbf6ef'%3E%C4%91%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="preload" href={bvpViet800} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={bvpLatin800} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={literataLatin} as="font" type="font/woff2" crossorigin />
+    <PrefsInit />
+    <Seo locale={locale} {...seo} />
+    <ClientRouter />
+  </head>
+  <body>
+    <a class="skip" href="#main">
+      {locale === 'vi' ? 'Bỏ qua tới nội dung' : 'Skip to content'}
+    </a>
+    <div id="ink-stage" aria-hidden="true" transition:persist="ink-stage"></div>
+    {reading && (
+      <div class="progress" aria-hidden="true">
+        <span class="fill" />
+        <span class="head" />
+      </div>
+    )}
+    <div class="wrap">
+      <header class="masthead" data-resist>
+        <a class="brand" href={paths.home(locale)}>
+          <span class="seal" aria-hidden="true">
+            <span>đ</span>
+          </span>
+          <span class="brand-word">{SITE.name}</span>
+        </a>
+        <nav class="nav" aria-label={locale === 'vi' ? 'Chính' : 'Main'}>
+          {nav.map((item) => (
+            <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        <div class="tools">
+          <a
+            class="icon-btn"
+            href={paths.search(locale)}
+            aria-label={t(locale, 'nav.search')}
+            title={t(locale, 'nav.search')}
+            aria-current={here.startsWith('/search/') ? 'page' : undefined}
+          >
+            <Icon name="search" />
+          </a>
+          <PrefsControls locale={locale} reading />
+          <a
+            class="icon-btn lang-btn"
+            href={otherHref}
+            hreflang={other}
+            lang={other}
+            aria-label={t(locale, 'lang.switch')}
+            title={t(locale, 'lang.switch')}
+          >
+            {other.toUpperCase()}
+          </a>
+        </div>
+      </header>
+      <main id="main" data-pagefind-body>
+        <slot />
+      </main>
+      <footer class="site-footer">
+        <div class="colophon">
+          <p class="sign-off">{signOff}</p>
+          <p class="meta">
+            <span>{t(locale, 'footer.license', SITE.license)}</span>
+            <span>Be Vietnam Pro, Literata, Source Code Pro</span>
+          </p>
+        </div>
+        <ul class="foot-links">
+          <li>
+            <a href={paths.rss(locale)}>RSS</a>
+          </li>
+          <li>
+            <a href={paths.tags(locale)}>{t(locale, 'nav.tags')}</a>
+          </li>
+          <li>
+            <a href={paths.search(locale)}>{t(locale, 'nav.search')}</a>
+          </li>
+          <li>
+            <a href={SITE.github} rel="me">
+              GitHub
+            </a>
+          </li>
+        </ul>
+      </footer>
+    </div>
+    <Analytics locale={locale} />
+    <script>
+      import '../scripts/site';
+    </script>
+  </body>
+</html>
