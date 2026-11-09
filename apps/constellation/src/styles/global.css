@@ -617,6 +617,13 @@ html.sky-live .sky-canvas {
 html.sky-live .sky-stage.is-live .star-dot {
   opacity: 0;
 }
+/* dawn: the printed glyph stays; WebGL only adds the fine diffraction spikes */
+html.sky-live[data-theme='light'] .sky-stage.is-live .star-dot {
+  opacity: 1;
+}
+html.sky-live[data-theme='light'] .sky-stage.is-live .star--article .star-dot::after {
+  opacity: 0;
+}
 .sky-stage.sky-stage.is-flying .star .star-label,
 .sky-stage.is-flying .anchor,
 .sky-stage.is-flying .lines {
@@ -735,6 +742,24 @@ a.star:focus-visible {
   transition:
     color 200ms var(--ease-state),
     opacity 200ms var(--ease-state);
+}
+.anchor.al-start {
+  transform: translate(-8px, -50%);
+}
+.anchor.al-end {
+  transform: translate(calc(-100% + 8px), -50%);
+}
+@media (orientation: portrait) {
+  .anchor.al-start,
+  .anchor.al-end {
+    transform: translate(-50%, -50%);
+  }
+  .anchor.ap-start {
+    transform: translate(-8px, -50%);
+  }
+  .anchor.ap-end {
+    transform: translate(calc(-100% + 8px), -50%);
+  }
 }
 .anchor.is-focus {
   color: var(--muted);
@@ -1455,8 +1480,8 @@ main {
   content: '';
   position: absolute;
   left: 4px;
-  top: 14px;
-  bottom: 14px;
+  top: 22px;
+  bottom: 22px;
   width: 1px;
   background: var(--rule-strong);
 }
@@ -1468,7 +1493,7 @@ main {
   content: '';
   position: absolute;
   left: 1px;
-  top: 14px;
+  top: 18px;
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -1487,8 +1512,10 @@ main {
   scale: 0.7;
 }
 .toc a {
-  display: block;
-  padding: 6px 0;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
   color: var(--muted);
   text-decoration: none;
   transition: color 150ms var(--ease-state);
@@ -1542,9 +1569,7 @@ main {
     min-height: 44px;
     padding: 0;
   }
-  .toc li::before {
-    top: 18px;
-  }
+
 }
 
 /* reading column */
@@ -2044,10 +2069,14 @@ main {
 [data-motion='reduce'] .hero-actions a[href='#catalogue'] {
   display: none;
 }
+[data-motion='reduce'] .nebula {
+  background: var(--bg);
+}
 [data-motion='reduce'] .hero {
   min-height: auto;
+  max-width: 52rem;
   grid-template-columns: minmax(0, 1fr);
-  padding-top: calc(var(--header-h) + clamp(32px, 8vh, 96px));
+  padding-top: calc(var(--header-h) + clamp(24px, 5vh, 64px));
   padding-bottom: 0;
 }
 [data-motion='reduce'] body[data-page='home'] .catalogue {

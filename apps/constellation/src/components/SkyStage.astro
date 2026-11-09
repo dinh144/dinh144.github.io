@@ -26,6 +26,8 @@ interface Props {
   keepStatic?: boolean;
   /** Draw the constellation lines in on arrival. */
   draw?: boolean;
+  /** 'land' uses the landscape layout at every orientation (wide bands on phones). */
+  world?: 'auto' | 'land';
   class?: string;
 }
 
@@ -40,6 +42,7 @@ const {
   variant = 'band',
   keepStatic = false,
   draw = false,
+  world = 'auto',
   class: className,
 } = Astro.props;
 
@@ -54,7 +57,8 @@ const focusSet = new Set(focus ?? sky.stars.map((s) => s.slug));
 const order = [...sky.stars].sort((a, b) => a.date.localeCompare(b.date));
 const stars = sky.stars
   .map((star) => {
-    const n = { land: norm('land', star.pos.land), port: norm('port', star.pos.port) };
+    const land = norm('land', star.pos.land);
+    const n = { land, port: world === 'land' ? land : norm('port', star.pos.port) };
     const state = star.slug === current ? 'current' : focusSet.has(star.slug) ? 'focus' : 'context';
     return { star, n, state, i: order.indexOf(star) };
   })
@@ -74,7 +78,10 @@ const edges = sky.edges
 const anchorList = sky.anchors
   .filter((a) => anchors !== 'none')
   .filter((a) => anchors === 'all' || a.members.some((m) => focusSet.has(m)))
-  .map((a) => ({ a, n: { land: norm('land', a.pos.land), port: norm('port', a.pos.port) } }))
+  .map((a) => {
+    const land = norm('land', a.pos.land);
+    return { a, n: { land, port: world === 'land' ? land : norm('port', a.pos.port) } };
+  })
   .filter(({ n }) => inside(n.land, 0) || inside(n.port, 0));
 
 const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
@@ -128,7 +135,14 @@ const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '')
 
   {anchorList.map(({ a, n }) => (
     <a
-      class:list={['anchor', `anchor--${a.kind}`, { 'is-focus': a.members.some((m) => focusSet.has(m)) }]}
+      class:list={[
+        'anchor',
+        `anchor--${a.kind}`,
+        { 'is-focus': a.members.some((m) => focusSet.has(m)) },
+        // keep region names inside the frame near its edges
+        n.land.x < 0.18 ? 'al-start' : n.land.x > 0.82 ? 'al-end' : '',
+        n.port.x < 0.22 ? 'ap-start' : n.port.x > 0.78 ? 'ap-end' : '',
+      ]}
       href={a.href}
       tabindex="-1"
       data-anchor={a.id}
@@ -148,7 +162,7 @@ const greek = (part?: number) => (part ? (GREEK[part - 1] ?? String(part)) : '')
           'star',
           `star--${star.type}`,
           `is-${state}`,
-          { 'side-land-l': star.side.land === 'l', 'side-port-l': star.side.port === 'l', 'no-label': !labelled },
+          { 'side-land-l': star.side.land === 'l', 'side-port-l': (world === 'land' ? star.side.land : star.side.port) === 'l', 'no-label': !labelled },
         ]}
         href={state === 'current' ? undefined : star.href}
         tabindex={state === 'current' ? undefined : '-1'}

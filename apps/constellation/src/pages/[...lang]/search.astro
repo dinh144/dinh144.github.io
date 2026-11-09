@@ -16,7 +16,7 @@ const frame = frameFor(sky, { aspect: { land: 1.55, port: 1.5 } });
 ---
 
 <Layout locale={locale} title={t(locale, 'search.title')} noindex page="search">
-  <PlateHead title={t(locale, 'search.title')} caption={t(locale, 'search.hint')} sky={sky} frame={frame} anchors="all" />
+  <PlateHead title={t(locale, 'search.title')} caption={t(locale, 'search.hint')} sky={sky} frame={frame} anchors="all" quiet />
   <div class="search-wrap wrap">
     <Search locale={locale} />
     <nav class="search-regions" aria-labelledby="regions-title">

@@ -122,8 +122,10 @@ const starFragment = /* glsl */ `
       float inkCore = smoothstep(0.075, 0.055, d);
       float inkRing = vKind > 1.5 ? smoothstep(0.035, 0.0, abs(d - 0.15)) : 0.0;
       float inkSpikes = vKind < 0.5 ? (smoothstep(0.012, 0.0, abs(p.x)) * smoothstep(0.62, 0.1, abs(p.y)) + smoothstep(0.012, 0.0, abs(p.y)) * smoothstep(0.62, 0.1, abs(p.x))) : 0.0;
-      if (vKind > 1.5) inkCore = 0.0;
-      a = clamp(inkCore + inkRing + inkSpikes * 0.8 + halo * 0.06, 0.0, 1.0) * vAlpha;
+      // the CSS glyph draws the dot itself in dawn; WebGL adds the spikes and the hover/flight growth
+      inkCore *= 0.0;
+      inkRing *= 0.0;
+      a = clamp(inkSpikes * 0.9 + halo * 0.05, 0.0, 1.0) * max(vAlpha, 0.6);
       col = vColor;
     } else {
       a = clamp(core + halo + spikes + ring, 0.0, 1.0) * vAlpha;

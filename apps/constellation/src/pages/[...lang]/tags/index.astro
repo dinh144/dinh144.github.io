@@ -19,7 +19,7 @@ const caption = vi
 ---
 
 <Layout locale={locale} title={t(locale, 'tags.title')} page="tags">
-  <PlateHead title={t(locale, 'tags.title')} caption={caption} sky={sky} frame={frame} anchors="all" />
+  <PlateHead title={t(locale, 'tags.title')} caption={caption} sky={sky} frame={frame} anchors="all" quiet />
   <section class="catalogue wrap" aria-label={t(locale, 'tags.title')}>
     <ul class="tag-index">
       {tags.map((tag) => (

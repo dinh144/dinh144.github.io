@@ -17,8 +17,10 @@ interface Props {
   keepStatic?: boolean;
   draw?: boolean;
   lang?: string;
+  /** Hide star labels (whole-sky plates stay an ambient chart; hover still names a star). */
+  quiet?: boolean;
 }
-const { title, caption, sky, frame, focus, only, anchors = 'focus', keepStatic, draw, lang } = Astro.props;
+const { title, caption, sky, frame, focus, only, anchors = 'focus', keepStatic, draw, lang, quiet } = Astro.props;
 ---
 
 <header class:list={['plate wrap', { 'plate--sky': sky && frame }]}>
@@ -26,9 +28,10 @@ const { title, caption, sky, frame, focus, only, anchors = 'focus', keepStatic, 
     <SkyStage
       sky={sky}
       frame={frame}
-      focus={focus}
+      focus={quiet ? [] : focus}
       only={only}
-      anchors={anchors}
+      world="land"
+      anchors={quiet && anchors === 'focus' ? 'none' : anchors}
       variant="band"
       keepStatic={keepStatic}
       draw={draw}
