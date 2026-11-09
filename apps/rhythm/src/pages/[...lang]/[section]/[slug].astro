@@ -6,6 +6,7 @@ import { paths, postPaths } from '@blog/core/routes';
 import { render } from 'astro:content';
 import Layout from '../../../layouts/Layout.astro';
 import { bar, c } from '../../../lib/copy';
+import katexCss from 'katex/dist/katex.min.css?url';
 
 export const getStaticPaths = () => postPaths();
 
@@ -14,11 +15,14 @@ const { data } = post;
 const { Content, headings } = await render(post.entry);
 const series = await getSeriesFor(post);
 const { prev, next } = neighbours(await getPosts(locale), post);
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
-const sections = headings.filter((h) => h.depth === 2);
+// The footnotes section adds a hidden 'footnote-label' heading; it is not part of the contents.
+const toc = headings.filter((h) => (h.depth === 2 || h.depth === 3) && h.slug !== 'footnote-label');
+const sections = toc.filter((h) => h.depth === 2);
 const other = otherLocale(locale);
 const hasOther = post.available.includes(other);
 const lang = post.contentLocale;
+// KaTeX styles (23 KB) only on posts that actually contain math.
+const hasMath = /\$\$[\s\S]+?\$\$|(^|[^\\$])\$[^$\n]+\$/.test(post.entry.body ?? '');
 const host = data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
 let sectionNo = 0;
 ---
@@ -34,6 +38,7 @@ let sectionNo = 0;
   reading
   kind="article"
 >
+  {hasMath && <link rel="stylesheet" href={katexCss} slot="head" />}
   <article class="article" data-type={data.type}>
     <header class="article-head frame grid">
       <h1 class="article-title" data-kin="title" lang={lang} transition:name={`title-${post.slug}`}>
@@ -72,40 +77,42 @@ let sectionNo = 0;
     </header>
 
     <div class="article-body frame grid">
-      {sections.length > 1 && (
-        <aside class="rail" aria-hidden="true">
-          <div class="rail-inner">
-            <p class="rail-label">{c(locale, 'playing')}</p>
-            <p class="rail-count">
-              <span data-rail-no>01</span>
-              <span class="rail-total">/ {bar(sections.length)}</span>
-            </p>
-            <p class="rail-name" data-rail-name lang={lang}>
-              {sections[0]?.text}
-            </p>
-          </div>
-        </aside>
-      )}
-      {toc.length > 1 && (
-        <details class="toc" open data-toc>
-          <summary>{t(locale, 'post.toc')}</summary>
-          <nav aria-label={t(locale, 'post.toc')}>
-            <ol>
-              {toc.map((h) => (
-                <li class={`depth-${h.depth}`}>
-                  <a href={`#${h.slug}`} data-toc-link={h.slug} lang={lang}>
-                    {h.depth === 2 && (
-                      <span class="toc-no" aria-hidden="true">
-                        {bar(++sectionNo)}
-                      </span>
-                    )}
-                    <span>{h.text}</span>
-                  </a>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </details>
+      {(sections.length > 1 || toc.length > 1) && (
+        <div class="side">
+          {sections.length > 1 && (
+            <div class="rail" aria-hidden="true">
+              <p class="rail-label">{c(locale, 'playing')}</p>
+              <p class="rail-count">
+                <span data-rail-no>01</span>
+                <span class="rail-total">/ {bar(sections.length)}</span>
+              </p>
+              <p class="rail-name" data-rail-name lang={lang}>
+                {sections[0]?.text}
+              </p>
+            </div>
+          )}
+          {toc.length > 1 && (
+            <details class="toc" data-toc>
+              <summary>{t(locale, 'post.toc')}</summary>
+              <nav aria-label={t(locale, 'post.toc')}>
+                <ol>
+                  {toc.map((h) => (
+                    <li class={`depth-${h.depth}`}>
+                      <a href={`#${h.slug}`} data-toc-link={h.slug} lang={lang}>
+                        {h.depth === 2 && (
+                          <span class="toc-no" aria-hidden="true">
+                            {bar(++sectionNo)}
+                          </span>
+                        )}
+                        <span>{h.text}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            </details>
+          )}
+        </div>
       )}
       <div class="prose" lang={lang} data-prose>
         {post.fallback && (

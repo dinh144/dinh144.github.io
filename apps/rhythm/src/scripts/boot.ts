@@ -31,7 +31,8 @@ function readingProgress() {
   const prose = document.querySelector<HTMLElement>('[data-prose]');
   const fill = document.querySelector<HTMLElement>('.playhead-fill');
   if (!prose) return;
-  const heads = [...prose.querySelectorAll<HTMLElement>('h2[id], h3[id]')];
+  // The footnotes section brings its own visually hidden h2; it is not a section of the article.
+  const heads = [...prose.querySelectorAll<HTMLElement>('h2[id]:not(.sr-only), h3[id]')];
   const sections = heads.filter((h) => h.tagName === 'H2');
   const railNo = document.querySelector<HTMLElement>('[data-rail-no]');
   const railName = document.querySelector<HTMLElement>('[data-rail-name]');
@@ -91,10 +92,85 @@ function headingText(h: HTMLElement) {
   return (h.querySelector('.sr-only') ?? h).textContent?.trim() ?? '';
 }
 
-/** On narrow screens the contents start folded so the article opens on its first paragraph. */
+/** The contents render folded (phones open on the first paragraph); wide screens show them in the margin. */
 function foldToc() {
   const toc = document.querySelector<HTMLDetailsElement>('[data-toc]');
-  if (toc && matchMedia('(max-width: 1023px)').matches) toc.open = false;
+  if (toc && matchMedia('(min-width: 1024px)').matches) toc.open = true;
+}
+
+/* ---------- footnotes as margin notes (wide screens; they stay at the end on phones) ---------- */
+function sidenotes() {
+  const prose = document.querySelector<HTMLElement>('[data-prose]');
+  const body = prose?.closest<HTMLElement>('.article-body');
+  const section = prose?.querySelector<HTMLElement>('section[data-footnotes]');
+  if (!prose || !body || !section) return;
+  const refs = [...prose.querySelectorAll<HTMLAnchorElement>('a[data-footnote-ref]')];
+  const mq = matchMedia('(min-width: 1024px)');
+  let notes: { note: HTMLElement; li: HTMLElement; ref: HTMLAnchorElement }[] = [];
+  let ro: ResizeObserver | undefined;
+
+  // Each note sits level with its reference, pushed down only when the previous note is in the way.
+  const place = () => {
+    const base = prose.getBoundingClientRect().top;
+    let floor = 0;
+    for (const { note, ref } of notes) {
+      const top = Math.max(ref.getBoundingClientRect().top - base, floor);
+      note.style.top = `${Math.round(top)}px`;
+      floor = top + note.offsetHeight + 20;
+    }
+  };
+  const build = () => {
+    for (const ref of refs) {
+      const id = decodeURIComponent(ref.hash.slice(1));
+      const li = document.getElementById(id);
+      if (!li) continue;
+      const note = document.createElement('div');
+      note.className = 'sidenote';
+      note.setAttribute('role', 'note');
+      const no = document.createElement('span');
+      no.className = 'sidenote-no';
+      no.textContent = ref.textContent ?? '';
+      note.append(no);
+      const content = li.cloneNode(true) as HTMLElement;
+      content.querySelectorAll('[data-footnote-backref]').forEach((a) => a.remove());
+      note.append(...content.childNodes);
+      // The reference now points at the margin note.
+      li.removeAttribute('id');
+      note.id = id;
+      body.append(note);
+      const on = () => note.toggleAttribute('data-active', true);
+      const off = () => note.removeAttribute('data-active');
+      ref.addEventListener('pointerenter', on);
+      ref.addEventListener('pointerleave', off);
+      ref.addEventListener('focus', on);
+      ref.addEventListener('blur', off);
+      notes.push({ note, li, ref });
+    }
+    body.classList.add('has-sidenotes');
+    place();
+    ro = new ResizeObserver(place);
+    ro.observe(prose);
+  };
+  const teardown = () => {
+    for (const { note, li } of notes) {
+      li.id = note.id;
+      note.remove();
+    }
+    notes = [];
+    ro?.disconnect();
+    body.classList.remove('has-sidenotes');
+  };
+  const sync = () => {
+    if (mq.matches && !notes.length) build();
+    else if (!mq.matches && notes.length) teardown();
+  };
+  sync();
+  void document.fonts.ready.then(place);
+  mq.addEventListener('change', sync);
+  cleanups.push(() => {
+    mq.removeEventListener('change', sync);
+    teardown();
+  });
 }
 
 /* ---------- Giscus follows the site theme, not only the OS ---------- */
@@ -151,6 +227,7 @@ export function boot() {
     document.documentElement.dataset.tempo = isPaused() ? 'paused' : 'playing';
     readingProgress();
     foldToc();
+    sidenotes();
     giscusTheme();
     bindMetronome();
     scoreSounds();

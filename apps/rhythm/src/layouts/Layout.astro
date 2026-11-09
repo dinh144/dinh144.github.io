@@ -3,7 +3,6 @@ import '@fontsource-variable/mona-sans/standard.css';
 import '@fontsource-variable/inter/index.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
-import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import monaLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-standard-normal.woff2?url';
 import monaViet from '@fontsource-variable/mona-sans/files/mona-sans-vietnamese-standard-normal.woff2?url';
@@ -75,6 +74,7 @@ const wordmark = [...SITE.name];
     <PrefsInit />
     <Seo locale={locale} {...seo} />
     <ClientRouter />
+    <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">
@@ -125,16 +125,19 @@ const wordmark = [...SITE.name];
             </svg>
           </a>
           <PrefsControls locale={locale} reading={reading} />
-          <a class="icon-btn lang-btn" href={otherHref} hreflang={other} lang={other} aria-label={c(other, 'langName')}>
+          <a class="icon-btn lang-btn" href={otherHref} hreflang={other} lang={other}>
             {other.toUpperCase()}
+            <span class="sr-only">{c(locale, 'langName')}</span>
           </a>
         </div>
       </div>
     </header>
     {(kind === 'home' || kind === 'list') && (
       <div class="lens" aria-hidden="true">
-        <span></span>
-        <span></span>
+        <div class="frame grid">
+          <span class="lens-head"></span>
+          <span class="lens-tail"></span>
+        </div>
       </div>
     )}
     {reading && (

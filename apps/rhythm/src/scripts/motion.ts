@@ -16,17 +16,19 @@ import { motionAllowed } from '@blog/core/client/preferences';
 import { gsap } from 'gsap';
 import Lenis from 'lenis';
 import { isPaused } from './tempo-state';
-import { lockLines, type AxisState, type Locked } from './lines';
+import { lockLines, track, type AxisState, type Locked } from './lines';
 
 
 const BASE_BPM = 96;
 const MAX_BOOST = 72;
-const MAX_STATE: AxisState = { wdth: 125, wght: 900 };
+/** Widest state any score title reaches; lines are checked against it (see lines.ts). */
+const MAX_STATE: AxisState = { wdth: 108, wght: 860 };
 
 /* ---------- clock ---------- */
 const clock = { beats: 0, bpm: BASE_BPM, paused: false, lastY: 0, lastBeat: -1, shownBpm: -1 };
 type Frame = { beats: number; bpm: number; dt: number; vh: number };
-type Part = { update: (f: Frame) => void; destroy: () => void; relock?: () => void };
+/** measure() runs for every part before any update(): all layout reads first, then all style writes. */
+type Part = { measure?: (f: Frame) => void; update: (f: Frame) => void; destroy: () => void; relock?: () => void };
 
 /** Sharp attack, exponential decay: the shape of one beat. */
 const hit = (beats: number, decay = 6) => {
@@ -52,7 +54,12 @@ document.addEventListener('astro:after-swap', () => {
   swapped = true;
 });
 
+const lastAxes = new WeakMap<HTMLElement, AxisState>();
+/** Write the axes, skipping changes too small to see (each write re-shapes the text). */
 function setAxes(el: HTMLElement, wdth: number, wght: number) {
+  const last = lastAxes.get(el);
+  if (last && Math.abs(last.wdth - wdth) < 0.5 && Math.abs(last.wght - wght) < 4) return;
+  lastAxes.set(el, { wdth, wght });
   el.style.fontStretch = `${wdth.toFixed(1)}%`;
   el.style.fontWeight = String(Math.round(wght));
 }
@@ -94,25 +101,71 @@ function metronomePart(): Part {
   };
 }
 
-/* ---------- hero: words pulse in canon ---------- */
+/* ---------- hero: words breathe in canon, at constant width ---------- */
+/**
+ * For a set of weights, find the width axis that keeps the hero's text exactly as wide as at rest.
+ * Heavier then means narrower: the words breathe without growing, so the lines never move.
+ */
+function isoWidth(el: HTMLElement, rest: AxisState, weights: number[]): (wght: number) => number {
+  const probe = document.createElement('span');
+  probe.textContent = el.textContent ?? '';
+  probe.setAttribute('aria-hidden', 'true');
+  Object.assign(probe.style, { position: 'absolute', visibility: 'hidden', whiteSpace: 'nowrap', left: '0', top: '0' });
+  el.append(probe);
+  const width = (wdth: number, wght: number) => {
+    probe.style.fontStretch = `${wdth}%`;
+    probe.style.fontWeight = String(wght);
+    return probe.getBoundingClientRect().width;
+  };
+  const target = width(rest.wdth, rest.wght);
+  const table = weights.map((wght) => {
+    let lo = 75;
+    let hi = 125;
+    for (let k = 0; k < 9; k++) {
+      const mid = (lo + hi) / 2;
+      if (width(mid, wght) > target) hi = mid;
+      else lo = mid;
+    }
+    return lo;
+  });
+  probe.remove();
+  return (wght) => {
+    const t = clamp((wght - weights[0]) / (weights[weights.length - 1] - weights[0]), 0, 1) * (weights.length - 1);
+    const i = Math.min(weights.length - 2, Math.floor(t));
+    return lerp(table[i], table[i + 1], t - i);
+  };
+}
+
+const HERO_REST: AxisState = { wdth: 100, wght: 640 };
+const HERO_WEIGHTS = [420, 500, 580, 640, 720, 800, 880];
+
 function heroPart(el: HTMLElement): Part {
-  let locked = lockLines(el, { wdth: 118, wght: 880 });
+  let iso = isoWidth(el, HERO_REST, HERO_WEIGHTS);
+  // Every state keeps the rest width, so the static line breaks stay as they are.
+  let locked = lockLines(el, HERO_REST);
   return {
+    measure() {
+      // Re-space last frame's words during the shared read pass.
+      locked.reflow();
+    },
     update(f) {
       const n = locked.words.length;
       locked.words.forEach((w, i) => {
         const phase = f.beats - i / 4;
-        const e = hit(phase, 5) * accent(phase) * blend;
+        const e = hit(phase, 5) * accent(phase);
         // A slow swell across the line underneath the beat keeps the phrase breathing.
-        const swell = (Math.sin((f.beats / 4) * Math.PI * 2 - (i / Math.max(1, n)) * Math.PI * 2) + 1) / 2;
-        setAxes(w, lerp(100, 96 + swell * 14 + e * 8, blend), lerp(640, 600 + swell * 120 + e * 160, blend));
+        const swell = Math.sin((f.beats / 4) * Math.PI * 2 - (i / Math.max(1, n)) * Math.PI * 2);
+        const wght = lerp(HERO_REST.wght, clamp(600 + swell * 150 + e * 180, 420, 880), blend);
+        setAxes(w, iso(wght), wght);
       });
     },
     relock() {
       locked.restore();
-      locked = lockLines(el, { wdth: 118, wght: 880 });
+      iso = isoWidth(el, HERO_REST, HERO_WEIGHTS);
+      locked = lockLines(el, HERO_REST);
     },
     destroy() {
+      locked.words.forEach(setAxesClear);
       locked.restore();
     },
   };
@@ -128,17 +181,22 @@ type Row = {
   boost: number;
   target: number;
   visible: boolean;
+  center: number;
+  live: boolean;
+  dirty: boolean;
 };
-const FLOOR: AxisState = { wdth: 76, wght: 280 };
+// One voice, three dynamics: the same face, never so far apart that a row looks like another font.
+const FLOOR: AxisState = { wdth: 84, wght: 400 };
 const DYN = {
-  article: { base: { wdth: 90, wght: 580 }, max: { wdth: 125, wght: 900 } },
-  note: { base: { wdth: 78, wght: 320 }, max: { wdth: 110, wght: 640 } },
-  link: { base: { wdth: 92, wght: 420 }, max: { wdth: 118, wght: 720 } },
+  article: { base: { wdth: 94, wght: 640 }, max: { wdth: 108, wght: 840 } },
+  note: { base: { wdth: 88, wght: 460 }, max: { wdth: 104, wght: 640 } },
+  link: { base: { wdth: 92, wght: 520 }, max: { wdth: 108, wght: 720 } },
 } as const;
+// Must match the static CSS (.row-title and its note/link variants).
 const REST = {
   article: { wdth: 100, wght: 740 },
-  note: { wdth: 88, wght: 420 },
-  link: { wdth: 112, wght: 520 },
+  note: { wdth: 92, wght: 480 },
+  link: { wdth: 104, wght: 540 },
 } as const;
 
 function scorePart(list: HTMLElement): Part {
@@ -155,6 +213,9 @@ function scorePart(list: HTMLElement): Part {
         boost: 0,
         target: 0,
         visible: true,
+        center: 0,
+        live: false,
+        dirty: false,
       };
     })
     .filter((r): r is Row => Boolean(r));
@@ -192,13 +253,24 @@ function scorePart(list: HTMLElement): Part {
   });
 
   return {
+    measure() {
+      for (const row of rows) {
+        // Re-space last frame's words in the same read pass.
+        if (row.dirty) {
+          row.dirty = false;
+          row.locked.reflow();
+        }
+        if (!row.visible) continue;
+        const rect = row.title.getBoundingClientRect();
+        row.center = rect.top + rect.height / 2;
+      }
+    },
     update(f) {
       const line = f.vh * 0.46;
       const spread = f.vh * 0.3;
       rows.forEach((row, i) => {
         if (!row.visible) return;
-        const rect = row.title.getBoundingClientRect();
-        const d = (rect.top + rect.height / 2 - line) / spread;
+        const d = (row.center - line) / spread;
         const lens = Math.exp(-d * d);
         row.p = lerp(row.p, lens, smooth(f.dt, 9));
         row.boost = lerp(row.boost, row.target, smooth(f.dt, 12));
@@ -212,12 +284,15 @@ function scorePart(list: HTMLElement): Part {
         // hover neighbours (p < 0) condense below it to make room.
         const wdth = p >= 0 ? lerp(dyn.base.wdth, dyn.max.wdth, p) : lerp(dyn.base.wdth, FLOOR.wdth, -p);
         const wght = p >= 0 ? lerp(dyn.base.wght, dyn.max.wght, p) : lerp(dyn.base.wght, FLOOR.wght, -p);
-        setAxes(
-          row.title,
-          lerp(rest.wdth, clamp(wdth + 3 * e, 75, 125), blend),
-          lerp(rest.wght, clamp(wght + 40 * e, 200, 900), blend),
-        );
-        row.li.toggleAttribute('data-live', p > 0.72);
+        const aw = lerp(rest.wdth, clamp(wdth + 2 * e, 75, MAX_STATE.wdth), blend);
+        const ag = lerp(rest.wght, clamp(wght + 30 * e, 200, MAX_STATE.wght), blend);
+        for (const w of row.locked.words) setAxes(w, aw, ag);
+        row.dirty = true;
+        const live = p > 0.72;
+        if (live !== row.live) {
+          row.live = live;
+          row.li.toggleAttribute('data-live', live);
+        }
         if (row.no) {
           // The metronome: each bar number snaps heavy on its beat, then relaxes.
           const tickE = hit(f.beats - i / 4, 9) * blend;
@@ -244,6 +319,7 @@ function scorePart(list: HTMLElement): Part {
 }
 
 function setAxesClear(el: HTMLElement) {
+  lastAxes.delete(el);
   el.style.fontStretch = '';
   el.style.fontWeight = '';
 }
@@ -261,7 +337,7 @@ function setOnBeat(el: HTMLElement, step = 0.25): Part {
   const wait = (Math.ceil(clock.beats) - clock.beats) * beat;
   // Words land on a sixteenth-note grid; long titles compress the grid so the whole entrance stays short.
   const gap = Math.min(beat * step, 0.9 / Math.max(1, locked.words.length));
-  const tl = gsap.timeline({ delay: wait });
+  const tl = gsap.timeline({ delay: wait, onUpdate: () => locked.reflow() });
   locked.words.forEach((w, i) => {
     tl.fromTo(
       w,
@@ -293,7 +369,7 @@ function headingsPart(prose: HTMLElement): Part {
     },
     { rootMargin: '0px 0px -12% 0px' },
   );
-  prose.querySelectorAll<HTMLElement>('h2, h3').forEach((h) => io.observe(h));
+  prose.querySelectorAll<HTMLElement>('h2:not(.sr-only), h3').forEach((h) => io.observe(h));
   return {
     update() {},
     destroy() {
@@ -304,32 +380,37 @@ function headingsPart(prose: HTMLElement): Part {
 }
 
 /* ---------- wordmark wave (footer, 404) ---------- */
-function wavePart(root: HTMLElement, fit: boolean): Part {
+// The wordmark is sized in CSS to fill the frame at rest; the wave never changes its layout box.
+function wavePart(root: HTMLElement): Part {
   const letters = [...root.querySelectorAll<HTMLElement>('.wm-ch')];
-  const doFit = () => {
-    if (!fit) return;
-    root.style.fontSize = '';
-    letters.forEach((l) => setAxes(l, MAX_STATE.wdth, MAX_STATE.wght));
-    const parent = root.parentElement ?? root;
-    const pcs = getComputedStyle(parent);
-    const avail = parent.clientWidth - parseFloat(pcs.paddingLeft) - parseFloat(pcs.paddingRight);
-    const used = root.getBoundingClientRect().width;
-    const size = parseFloat(getComputedStyle(root).fontSize);
-    if (used > 0) root.style.fontSize = `${Math.floor((size * avail * 0.995) / used)}px`;
+  const texts = letters.map((l) => l.textContent ?? '');
+  let t = track([letters]);
+  const release = () => {
+    letters.forEach((l, i) => {
+      l.textContent = texts[i];
+      l.classList.remove('kbox');
+      l.style.width = '';
+      l.style.transform = '';
+    });
   };
-  doFit();
   return {
+    measure() {
+      t.reflow();
+    },
     update(f) {
-      letters.forEach((l, i) => {
+      t.inners.forEach((l, i) => {
         const phase = f.beats - i / 8;
         const e = hit(phase, 3.5) * accent(phase);
-        setAxes(l, lerp(100, 80 + 45 * e, blend), lerp(700, 300 + 600 * e, blend));
+        setAxes(l, lerp(100, 88 + 24 * e, blend), lerp(700, 460 + 440 * e, blend));
       });
     },
-    relock: doFit,
+    relock() {
+      release();
+      t = track([letters]);
+    },
     destroy() {
-      root.style.fontSize = '';
-      letters.forEach(setAxesClear);
+      t.inners.forEach(setAxesClear);
+      release();
     },
   };
 }
@@ -357,9 +438,9 @@ export function mountPage() {
   const prose = document.querySelector<HTMLElement>('[data-prose]');
   if (prose) parts.push(headingsPart(prose));
   const wordmark = document.querySelector<HTMLElement>('.wordmark');
-  if (wordmark) parts.push(wavePart(wordmark, true));
+  if (wordmark) parts.push(wavePart(wordmark));
   const lost = document.querySelector<HTMLElement>('.lost-digits');
-  if (lost) parts.push(wavePart(lost, false));
+  if (lost) parts.push(wavePart(lost));
 }
 
 export function unmountPage() {
@@ -377,6 +458,7 @@ function frame(_time: number, deltaMs: number) {
   clock.bpm = lerp(clock.bpm, target, smooth(dt, target > clock.bpm ? 4 : 1.2));
   if (!clock.paused) clock.beats += (dt * clock.bpm) / 60;
   const f: Frame = { beats: clock.beats, bpm: clock.bpm, dt, vh: window.innerHeight };
+  for (const p of parts) p.measure?.(f);
   for (const p of parts) p.update(f);
 }
 
@@ -405,7 +487,14 @@ export async function start() {
   gsap.ticker.lagSmoothing(0);
   window.addEventListener('resize', onResize, { passive: true });
   document.documentElement.classList.add('is-kinetic');
+  document.addEventListener('visibilitychange', onVisibility);
   mountPage();
+}
+
+/** Nothing runs while the tab is hidden. */
+function onVisibility() {
+  if (document.hidden) gsap.ticker.sleep();
+  else gsap.ticker.wake();
 }
 
 function lenisRaf(time: number) {
@@ -421,6 +510,7 @@ export function stop() {
   lenis?.destroy();
   lenis = undefined;
   window.removeEventListener('resize', onResize);
+  document.removeEventListener('visibilitychange', onVisibility);
   document.documentElement.classList.remove('is-kinetic');
 }
 
