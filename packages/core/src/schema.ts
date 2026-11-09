@@ -3,7 +3,7 @@ import { z } from 'astro/zod';
 /** Sveltia writes empty strings for blank optional fields; treat them as missing. */
 const blankToUndefined = (value: unknown) => (value === '' || value === null ? undefined : value);
 const optionalString = z.preprocess(blankToUndefined, z.string().optional());
-const optionalUrl = z.preprocess(blankToUndefined, z.string().url().optional());
+const optionalUrl = z.preprocess(blankToUndefined, z.url().optional());
 
 export const POST_TYPES = ['article', 'note', 'link'] as const;
 export type PostType = (typeof POST_TYPES)[number];

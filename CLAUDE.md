@@ -24,7 +24,7 @@ moves to the site root and the rest get deleted.
 - Dev one theme: `pnpm --filter <app> dev` · build one: `pnpm --filter <app> build`
 - Build everything: `pnpm build` → `dist/`
 - Verify a theme: `node scripts/verify-theme.mjs <app>` → `apps/<app>/.verify/`
-- Type check: `pnpm --filter <app> check` (known issue: crashes on Node 26 inside the @emnapi/runtime beta; the build catches real errors meanwhile)
+- Type check: `pnpm --filter <app> check` (works with the `@emnapi/runtime` override in pnpm-workspace.yaml)
 
 ## Rules
 - Fonts must include the Google Fonts `vietnamese` subset; self-host with @fontsource. Test ệ ữ ặ ở large.
