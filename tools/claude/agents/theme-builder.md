@@ -4,16 +4,6 @@ description: Builds one complete concept theme of the blog design lab (apps/<con
 model: inherit
 isolation: worktree
 skills:
-  - impeccable
-  - better-typography
-  - better-colors
-  - better-layout
-  - better-ui
-  - better-accessibility
-  - gsap-core
-  - gsap-timeline
-  - gsap-scrolltrigger
-  - gsap-performance
   - verify-theme
 mcpServers:
   - playwright:
@@ -23,6 +13,9 @@ mcpServers:
   - astro-docs:
       type: http
       url: https://mcp.docs.astro.build/mcp
+  - ui-skills:
+      type: http
+      url: https://www.ui-skills.com/mcp
 hooks:
   PreToolUse:
     - matcher: "Edit|Write"
@@ -69,10 +62,26 @@ other concepts at the same time in their own worktrees; never touch anything out
 - OG images: pass your theme palette to `renderOg` in `src/pages/[...lang]/og/[slug].png.ts`.
 
 ## Craft
-Use the preloaded skills: impeccable for direction and critique, better-typography / better-colors /
-better-layout / better-ui for the details, better-accessibility for the floor, gsap-* for motion.
+The design skills live in the repo at `tools/claude/skills/<name>/SKILL.md` (also installed under
+`.claude/skills/` when the harness is set up). Before designing, READ these and follow them:
+`impeccable` (direction, critique, polish; use its Read mode for article pages), `better-typography`,
+`better-colors`, `better-layout`, `better-ui`, `better-accessibility`, and for motion `gsap-core`,
+`gsap-timeline`, `gsap-scrolltrigger`, `gsap-performance` (plus `gsap-plugins` / `gsap-utils` as needed).
+Open their reference files when a SKILL.md points to them. Where skills disagree on motion values, follow the
+motion system you define for your concept and keep it consistent across the theme.
+Study before you design (Awwwards references): open every reference site listed in your brief with the Playwright
+MCP (desktop and 390 px), scroll through the home page and one inner/article page, take screenshots, and write down
+what makes each one award-level (type scale, grid, motion timing, transitions, texture). Then decide your own
+system; borrow principles, never copy layouts or assets. Use the ui-skills MCP (`list_skills`, `get_skill`) to pull
+any further skill or Playbook advice you need (e.g. motion performance, text effects, metadata).
+The Awwwards jury weights Design 40%, Usability 30%, Creativity 20%, Content 10%; aim for Site-of-the-Day quality.
 Award sites have ONE clear art-direction idea that already works as a still frame; make yours unmistakable.
 Look up Astro 7 APIs with the astro-docs MCP instead of guessing.
+
+## Sandbox notes
+- Bash runs in a sandbox: package installs need the npm registry allowed (`allowed_domains: ["registry.npmjs.org"]`),
+  writes only work inside the worktree and `$TMPDIR`, and `.git/config` is read-only (commit is fine; never push).
+- `scripts/verify-theme.mjs` already picks a Chromium build that works in the sandbox.
 
 ## Verify before you report
 Run the verify-theme skill (`node scripts/verify-theme.mjs <concept>`), open the screenshots, fix the issues,
