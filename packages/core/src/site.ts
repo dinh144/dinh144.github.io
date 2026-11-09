@@ -9,12 +9,12 @@ export const SITE = {
   github: 'https://github.com/dinh144',
   repo: 'dinh144/dinh144.github.io',
   license: { content: 'CC BY 4.0', code: 'MIT' },
-  /** Filled in once the giscus app is installed on the repo (ids come from giscus.app). */
+  /** Announcements category: only the giscus app (and the owner) can open threads. Needs the giscus GitHub app installed on the repo. */
   giscus: {
     repo: 'dinh144/dinh144.github.io',
-    repoId: '',
-    category: 'Comments',
-    categoryId: '',
+    repoId: 'R_kgDOVn33Hw',
+    category: 'Announcements',
+    categoryId: 'DIC_kwDOVn33H84DKteF',
   },
   /** Analytics stay off in the lab; the winning theme turns them on with PUBLIC_ANALYTICS=on. */
   analytics: {
