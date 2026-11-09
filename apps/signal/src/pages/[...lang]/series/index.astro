@@ -1,0 +1,36 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getSeriesList } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import Opener from '../../../components/Opener.astro';
+import Layout from '../../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const list = await getSeriesList(locale);
+---
+
+<Layout locale={locale} title={t(locale, 'nav.series')}>
+  <Opener title={t(locale, 'nav.series')} seedKey="series-index" shape="knot" />
+  <section class="wrap feed">
+    {list.length ? (
+      <ol class="listing">
+        {list.map((series) => (
+          <li class="series-row">
+            <h2>
+              <a href={paths.series(locale, series.id)} data-decode set:text={series.title} />
+            </h2>
+            {series.description && <p>{series.description}</p>}
+            <span class="parts">
+              {t(locale, 'series.parts', { n: series.parts.length })}
+              <span class="bars" aria-hidden="true" set:text={'■'.repeat(series.parts.length)} />
+            </span>
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <p class="empty">{t(locale, 'series.empty')}</p>
+    )}
+  </section>
+</Layout>

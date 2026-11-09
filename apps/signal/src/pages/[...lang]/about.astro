@@ -1,0 +1,26 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPage } from '@blog/core/posts';
+import { localePaths } from '@blog/core/routes';
+import { render } from 'astro:content';
+import Opener from '../../components/Opener.astro';
+import Layout from '../../layouts/Layout.astro';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const page = await getPage(locale, 'about');
+const rendered = page ? await render(page) : undefined;
+const Content = rendered?.Content;
+const title = page?.data.title ?? t(locale, 'nav.about');
+const lang = page?.id.split('/')[0] ?? locale;
+---
+
+<Layout locale={locale} title={title} description={page?.data.description}>
+  <Opener title={title} seedKey="about" shape="blob" dek={page?.data.description || undefined} lang={lang} />
+  <div class="wrap about-body">
+    <div class="prose" lang={lang}>
+      {Content && <Content />}
+    </div>
+  </div>
+</Layout>

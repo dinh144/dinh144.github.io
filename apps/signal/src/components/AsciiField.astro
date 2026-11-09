@@ -1,0 +1,73 @@
+---
+/**
+ * Host for the ASCII signal field. Paints a server-rendered still frame (<pre>) first; when motion is
+ * allowed the WebGL field mounts on top and the still fades out. Decorative: hidden from assistive tech
+ * and from the search index.
+ */
+import { asciiFrame, shapeFor, type ShapeName } from '../lib/ascii';
+
+interface Props {
+  variant: 'hero' | 'band' | 'void';
+  seed: number;
+  shape?: ShapeName | 'morph' | 'none';
+  class?: string;
+}
+
+const { variant, seed, shape: shapeProp, class: extra } = Astro.props;
+const shape = shapeProp ?? shapeFor(seed);
+const stillShape: ShapeName = shape === 'morph' ? 'torus' : shape === 'none' ? shapeFor(seed) : shape;
+
+// Layout per variant: where the shape sits (fractions of the host) on wide and narrow screens.
+const layout = {
+  hero: { cx: 0.7, cy: 0.52, scale: 0.86, cxSm: 0.5, cySm: 0.7, scaleSm: 0.62, static: 0.03, alpha: 1 },
+  band: { cx: 0.74, cy: 0.5, scale: 0.92, cxSm: 0.62, cySm: 0.5, scaleSm: 0.9, static: 0.022, alpha: 0.9 },
+  void: { cx: 0.5, cy: 0.5, scale: 0.8, cxSm: 0.5, cySm: 0.5, scaleSm: 0.8, static: 0.06, alpha: 1 },
+}[variant];
+
+const dims =
+  variant === 'band'
+    ? { wide: { cols: 190, rows: 18 }, narrow: { cols: 60, rows: 14 } }
+    : { wide: { cols: 190, rows: 66 }, narrow: { cols: 60, rows: 72 } };
+
+const still = (wide: boolean) => {
+  const d = wide ? dims.wide : dims.narrow;
+  if (shape === 'none') return asciiFrame({ ...d, shape: 'blob', seed, scale: 0.0001, static: 0.09 });
+  return asciiFrame({
+    ...d,
+    shape: stillShape,
+    seed,
+    centerX: wide ? layout.cx : layout.cxSm,
+    scale: wide ? layout.scale : layout.scaleSm,
+    static: layout.static,
+  });
+};
+// The still frame is anchored to the same centre as the live field, so the swap does not jump.
+const stillWide = still(true);
+const stillNarrow = still(false);
+---
+
+<div
+  class:list={['field', `field--${variant}`, extra]}
+  data-field
+  data-shape={shape}
+  data-seed={seed}
+  data-cx={layout.cx}
+  data-cy={layout.cy}
+  data-scale={layout.scale}
+  data-cx-sm={layout.cxSm}
+  data-cy-sm={variant === 'hero' ? layout.cySm : layout.cy}
+  data-scale-sm={layout.scaleSm}
+  data-static={layout.static}
+  data-alpha={layout.alpha}
+  aria-hidden="true"
+  data-pagefind-ignore
+  style={`--cx:${layout.cx};--cy:${layout.cy};--cx-sm:${layout.cxSm};--cy-sm:${variant === 'hero' ? layout.cySm : layout.cy}`}
+>
+  <pre class="field-still field-still--wide" set:text={stillWide} />
+  <pre class="field-still field-still--narrow" set:text={stillNarrow} />
+  <p class="hud" data-hud>
+    <span data-hud-shape>{shape === 'none' ? 'no carrier' : stillShape}</span>
+    <span data-hud-grid>{dims.wide.cols}×{dims.wide.rows}</span>
+    <span data-hud-rate>still</span>
+  </p>
+</div>

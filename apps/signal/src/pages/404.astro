@@ -1,0 +1,43 @@
+---
+import { t } from '@blog/core/i18n';
+import { paths } from '@blog/core/routes';
+import AsciiField from '../components/AsciiField.astro';
+import Layout from '../layouts/Layout.astro';
+import { c } from '../lib/copy';
+---
+
+<Layout locale="vi" title={t('vi', 'notfound.title')} noindex>
+  <section class="void">
+    <AsciiField variant="void" seed={404} shape="none" />
+    <div class="void-copy">
+      <p class="code">
+        404 · {c('vi', 'nosignal')} <span lang="en">/ {c('en', 'nosignal')}</span>
+      </p>
+      <h1>
+        <span data-decode>{t('vi', 'notfound.title')}</span>
+      </h1>
+      <p>{c('vi', 'nosignal.hint')}</p>
+      <p lang="en">{c('en', 'nosignal.hint')}</p>
+      <div class="actions">
+        <a class="hero-jump" href={paths.home('vi')}>
+          <span class="ps" aria-hidden="true">
+            $ cd ~
+          </span>
+          {t('vi', 'notfound.back')}
+        </a>
+        <a class="hero-jump" href={paths.home('en')} lang="en">
+          <span class="ps" aria-hidden="true">
+            $ cd ~/en
+          </span>
+          {t('en', 'notfound.back')}
+        </a>
+        <a class="hero-jump" href={paths.search('vi')}>
+          <span class="ps" aria-hidden="true">
+            $
+          </span>
+          {t('vi', 'search.title')}
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>

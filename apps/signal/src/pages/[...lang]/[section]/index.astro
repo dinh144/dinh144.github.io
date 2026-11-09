@@ -1,0 +1,25 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPostsBySection, type Section } from '@blog/core/posts';
+import { sectionPaths } from '@blog/core/routes';
+import Feed from '../../../components/Feed.astro';
+import Opener from '../../../components/Opener.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { c } from '../../../lib/copy';
+
+export const getStaticPaths = () => sectionPaths();
+
+const { locale, section } = Astro.props as { locale: Locale; section: Section };
+const posts = await getPostsBySection(locale, section);
+const title = t(locale, section === 'posts' ? 'nav.posts' : section === 'notes' ? 'nav.notes' : 'nav.links');
+const shape = section === 'posts' ? 'torus' : section === 'notes' ? 'octa' : 'blob';
+---
+
+<Layout locale={locale} title={title}>
+  <Opener title={title} seedKey={`section-${section}`} shape={shape}>
+    <p class="meta">
+      <span>{c(locale, 'feed.count', { n: posts.length })}</span>
+    </p>
+  </Opener>
+  <Feed locale={locale} posts={posts} active={section} />
+</Layout>

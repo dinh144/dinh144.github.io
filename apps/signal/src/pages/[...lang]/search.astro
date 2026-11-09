@@ -1,0 +1,23 @@
+---
+import Search from '@blog/core/components/Search.astro';
+import { t, type Locale } from '@blog/core/i18n';
+import { localePaths } from '@blog/core/routes';
+import Opener from '../../components/Opener.astro';
+import Layout from '../../layouts/Layout.astro';
+import { c } from '../../lib/copy';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+---
+
+<Layout locale={locale} title={t(locale, 'search.title')} noindex>
+  <Opener title={t(locale, 'search.title')} seedKey="search" shape="torus" />
+  <div class="wrap search-shell">
+    <p class="search-hint">
+      <span aria-hidden="true">$ {c(locale, 'search.cmd')} · </span>
+      {t(locale, 'search.hint')}
+    </p>
+    <Search locale={locale} />
+  </div>
+</Layout>

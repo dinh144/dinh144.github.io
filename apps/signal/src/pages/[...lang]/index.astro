@@ -1,0 +1,66 @@
+---
+import { formatDate, type Locale } from '@blog/core/i18n';
+import { getPosts } from '@blog/core/posts';
+import { localePaths } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import AsciiField from '../../components/AsciiField.astro';
+import Feed from '../../components/Feed.astro';
+import Layout from '../../layouts/Layout.astro';
+import { c } from '../../lib/copy';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const posts = await getPosts(locale);
+const tagline =
+  locale === 'vi'
+    ? 'Ghi chép về lập trình, máy học và những gì mình học được mỗi tuần.'
+    : 'Notes on programming, machine learning and what I learn each week.';
+const latest = posts[0]?.data.date;
+---
+
+<Layout locale={locale} title={SITE.name} description={tagline}>
+  <section class="hero" aria-labelledby="hero-title">
+    <AsciiField variant="hero" seed={20261109} shape="morph" />
+    <div class="hero-copy wrap">
+      <h1 id="hero-title">
+        <span class="hash" aria-hidden="true">
+          #
+        </span>
+        <span data-decode>{tagline}</span>
+        <span class="cursor" aria-hidden="true"></span>
+      </h1>
+      <ul class="hero-meta">
+        <li>
+          <b>{posts.length}</b> {c(locale, 'status.posts')}
+        </li>
+        {latest && (
+          <li>
+            {c(locale, 'status.latest')} <b>{formatDate(latest, locale, 'numeric')}</b>
+          </li>
+        )}
+        <li>
+          {c(locale, 'status.lang')} <b>vi</b> / <b>en</b>
+        </li>
+      </ul>
+      <a class="hero-jump" href="#feed" data-jump>
+        <span class="ps" aria-hidden="true">
+          $
+        </span>
+        <span>{c(locale, 'feed.jump')}</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M12 4v15M6 13l6 6 6-6"></path>
+        </svg>
+      </a>
+    </div>
+  </section>
+  <Feed locale={locale} posts={posts} active="all" id="feed" />
+</Layout>

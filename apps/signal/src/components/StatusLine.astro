@@ -1,0 +1,110 @@
+---
+/**
+ * The fixed status line, like a terminal multiplexer's: signal state (live or still), the working
+ * directory, reading progress on articles, and the reader's switches: screen (dark / phosphor / light),
+ * sound and reading mode. Preferences live in @blog/core/client/preferences; the phosphor screen is
+ * this theme's own third state (see scripts/screen.ts).
+ */
+import { t, type Locale } from '@blog/core/i18n';
+import { c } from '../lib/copy';
+
+interface Props {
+  locale: Locale;
+  reading?: boolean;
+  cwd: string;
+}
+const { locale, reading = false, cwd } = Astro.props;
+const screens = [
+  { id: 'dark', label: c(locale, 'screen.dark') },
+  { id: 'phosphor', label: c(locale, 'screen.phosphor') },
+  { id: 'light', label: c(locale, 'screen.light') },
+] as const;
+---
+
+<div class="status" data-status>
+  <span class="sig">
+    <span class="led" aria-hidden="true"></span>
+    <span class="txt">
+      <span class="live-label">
+        {c(locale, 'status.signal')}: {c(locale, 'status.locked')}
+      </span>
+      <span class="static-label">
+        {c(locale, 'status.signal')}: {c(locale, 'status.static')}
+      </span>
+    </span>
+  </span>
+  {reading ? (
+    <span class="progress" data-progress>
+      <span class="sr-only">{c(locale, 'progress')}</span>
+      <span class="blocks" aria-hidden="true" data-blocks />
+      <span class="pct" data-pct>
+        0%
+      </span>
+    </span>
+  ) : (
+    <span class="path spacer" aria-hidden="true">
+      {cwd}
+    </span>
+  )}
+  <div class="prefs">
+    <div class="seg" role="group" aria-label={c(locale, 'screen.label')} data-screens>
+      {screens.map((s) => (
+        <button
+          type="button"
+          class="tool"
+          data-screen-btn={s.id}
+          aria-pressed="false"
+          aria-label={s.label}
+          title={s.label}
+        >
+          {s.id === 'dark' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M19.5 14.2A7.8 7.8 0 1 1 9.8 4.5a6.3 6.3 0 0 0 9.7 9.7z" />
+            </svg>
+          )}
+          {s.id === 'phosphor' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <rect x="3" y="4.5" width="18" height="13" rx="2" />
+              <path d="M7 9l2.6 2.2L7 13.4M11.5 13.5h4M9 20.5h6" />
+            </svg>
+          )}
+          {s.id === 'light' && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />
+            </svg>
+          )}
+        </button>
+      ))}
+    </div>
+    <button
+      type="button"
+      class="tool"
+      data-pref="sound"
+      aria-pressed="false"
+      aria-label={t(locale, 'prefs.sound')}
+      title={t(locale, 'prefs.sound')}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+        <path d="M4 9.5v5h3.6L12.5 18V6L7.6 9.5H4z"></path>
+        <path d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.4 7.4 0 0 1 0 10.4"></path>
+      </svg>
+    </button>
+    {/* Offered on articles, and anywhere while it is on, so it can always be switched off. */}
+    {
+      <button
+        type="button"
+        class:list={['tool', !reading && 'reading-elsewhere']}
+        data-pref="reading"
+        aria-pressed="false"
+        aria-label={t(locale, 'prefs.reading')}
+        title={t(locale, 'prefs.readingHint')}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M3.5 5.5h6a2.5 2.5 0 0 1 2.5 2.5v11a2 2 0 0 0-2-2H3.5zM20.5 5.5h-6A2.5 2.5 0 0 0 12 8v11a2 2 0 0 1 2-2h6.5z" />
+        </svg>
+        <span class="label">{t(locale, 'prefs.reading')}</span>
+      </button>
+    }
+  </div>
+</div>

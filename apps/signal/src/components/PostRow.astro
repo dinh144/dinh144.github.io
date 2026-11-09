@@ -1,0 +1,57 @@
+---
+/**
+ * One entry in a feed: type column, decoding title, description, [tag] labels, reading time, and a
+ * thumbnail of the post's own transmission (the same seeded shape its page opens with).
+ */
+import { formatDate, t } from '@blog/core/i18n';
+import type { Post } from '@blog/core/posts';
+import { paths } from '@blog/core/routes';
+import { asciiFrame, shapeFor } from '../lib/ascii';
+import { hashString } from '../lib/copy';
+
+interface Props {
+  post: Post;
+  heading?: 'h2' | 'h3';
+  /** Lead the meta line with the date (lists that are not grouped by day). */
+  showDate?: boolean;
+}
+const { post, heading = 'h3', showDate = false } = Astro.props;
+const { data } = post;
+const Heading = heading;
+const host = data.type === 'link' && data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
+const typeLabel =
+  data.type === 'note'
+    ? t(post.locale, 'type.note')
+    : data.type === 'link'
+      ? t(post.locale, 'type.link')
+      : data.series
+        ? `${t(post.locale, 'type.series')} ${data.series.part}`
+        : t(post.locale, 'type.article');
+const glyph = data.type === 'note' ? '▪' : data.type === 'link' ? '↗' : '■';
+const seed = hashString(post.slug);
+const thumb = asciiFrame({ cols: 30, rows: 12, shape: shapeFor(seed), seed, scale: 1.25, static: 0.03 });
+---
+
+<li class="row" data-type={data.type} data-series={data.series?.id}>
+  <span class="row-type type-chip" data-type={data.type}>
+    <span class="glyph" aria-hidden="true" set:text={glyph} />
+    {typeLabel}
+  </span>
+  <Heading class="row-title">
+    <a href={paths.post(post)} data-decode set:text={data.title} />
+  </Heading>
+  {data.type !== 'note' && data.description && <p class="row-desc">{data.description}</p>}
+  <p class="row-meta">
+    {showDate && <time datetime={data.date.toISOString()}>{formatDate(data.date, post.locale, 'numeric')}</time>}
+    <span class="type-inline type-chip" data-type={data.type}>
+      {typeLabel}
+    </span>
+    {host && <span>{host}</span>}
+    {data.tags.map((tag) => (
+      <span class="tag">{tag}</span>
+    ))}
+    {data.type === 'article' && <span>{t(post.locale, 'post.minutes', { n: post.minutes })}</span>}
+    {post.fallback && <span lang="vi">[vi]</span>}
+  </p>
+  <pre class="row-thumb" aria-hidden="true" data-pagefind-ignore set:text={thumb} />
+</li>

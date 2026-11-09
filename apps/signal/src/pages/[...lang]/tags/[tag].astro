@@ -1,0 +1,29 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import type { Post, TagInfo } from '@blog/core/posts';
+import { paths, tagPaths } from '@blog/core/routes';
+import Opener from '../../../components/Opener.astro';
+import PostRow from '../../../components/PostRow.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { c } from '../../../lib/copy';
+
+export const getStaticPaths = () => tagPaths();
+
+const { locale, tag, posts } = Astro.props as { locale: Locale; tag: TagInfo; posts: Post[] };
+---
+
+<Layout locale={locale} title={`#${tag.name}`}>
+  <Opener title={tag.name} seedKey={`tag-${tag.slug}`}>
+    <p class="meta">
+      <a href={paths.tags(locale)}>{t(locale, 'tags.title')}</a>
+      <span>{c(locale, 'feed.count', { n: posts.length })}</span>
+    </p>
+  </Opener>
+  <section class="wrap feed">
+    <ol class="stream listing">
+      {posts.map((post) => (
+        <PostRow post={post} heading="h2" showDate />
+      ))}
+    </ol>
+  </section>
+</Layout>
