@@ -684,8 +684,18 @@ html.sky-live[data-theme='light'] .sky-stage.is-live .star--article .star-dot::a
 .star.no-label.side-land-l .star-label {
   translate: 4px 0;
 }
-.star.is-current .star-label {
-  display: none;
+.star-label--here .star-meta {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.star-vi {
+  padding: 0 4px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 .star.is-current .star-dot::before {
   width: calc(8px + var(--mag) * 8px);
@@ -694,9 +704,7 @@ html.sky-live[data-theme='light'] .sky-stage.is-live .star--article .star-dot::a
   width: 64px;
   height: 64px;
 }
-.star.is-current .star-dot > * {
-  display: none;
-}
+
 .sky-stage.has-hot .star:not(.is-hot, .is-near, .is-current) .star-dot {
   opacity: 0.35;
 }
@@ -739,6 +747,10 @@ a.star:focus-visible {
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
+  text-shadow:
+    0 0 3px var(--bg),
+    0 0 8px var(--bg),
+    0 0 16px var(--bg);
   transition:
     color 200ms var(--ease-state),
     opacity 200ms var(--ease-state);
@@ -748,18 +760,6 @@ a.star:focus-visible {
 }
 .anchor.al-end {
   transform: translate(calc(-100% + 8px), -50%);
-}
-@media (orientation: portrait) {
-  .anchor.al-start,
-  .anchor.al-end {
-    transform: translate(-50%, -50%);
-  }
-  .anchor.ap-start {
-    transform: translate(-8px, -50%);
-  }
-  .anchor.ap-end {
-    transform: translate(calc(-100% + 8px), -50%);
-  }
 }
 .anchor.is-focus {
   color: var(--muted);
@@ -783,7 +783,60 @@ a.star:focus-visible {
   color: var(--ink);
 }
 
-@media (orientation: portrait) {
+/*
+ * Which layout world applies: land (>=1181px), mid (761-1180px landscape: chart beside the copy),
+ * port (phones and portrait tablets: chart above the copy). Same breakpoints as the hero below.
+ */
+.lines--mid,
+.lines--port {
+  display: none;
+}
+@media (min-width: 761px) and (max-width: 1180px) and (orientation: landscape) {
+  .lines--land {
+    display: none;
+  }
+  .lines--mid {
+    display: block;
+  }
+  .star,
+  .anchor {
+    left: var(--mx);
+    top: var(--my);
+  }
+  .star.side-land-l {
+    flex-direction: row;
+    transform: translate(-22px, -50%);
+    text-align: start;
+  }
+  .star.side-mid-l {
+    flex-direction: row-reverse;
+    transform: translate(calc(-100% + 22px), -50%);
+    text-align: end;
+  }
+  .side-land-l .star-meta {
+    justify-content: flex-start;
+  }
+  .side-mid-l .star-meta {
+    justify-content: flex-end;
+  }
+  .anchor.al-start,
+  .anchor.al-end {
+    transform: translate(-50%, -50%);
+  }
+  .anchor.am-start {
+    transform: translate(-8px, -50%);
+  }
+  .anchor.am-end {
+    transform: translate(calc(-100% + 8px), -50%);
+  }
+  .star-label {
+    max-width: 10.5rem;
+  }
+  .sky-stage--hero .star-meta {
+    display: none;
+  }
+}
+@media (max-width: 760px), (max-width: 1180px) and (orientation: portrait) {
   .lines--land {
     display: none;
   }
@@ -811,6 +864,16 @@ a.star:focus-visible {
   .side-port-l .star-meta {
     justify-content: flex-end;
   }
+  .anchor.al-start,
+  .anchor.al-end {
+    transform: translate(-50%, -50%);
+  }
+  .anchor.ap-start {
+    transform: translate(-8px, -50%);
+  }
+  .anchor.ap-end {
+    transform: translate(calc(-100% + 8px), -50%);
+  }
   .star-label {
     max-width: 10.5rem;
   }
@@ -826,6 +889,15 @@ a.star:focus-visible {
   .star-meta {
     display: none;
   }
+  .star-label--here .star-meta,
+  .star.is-hot .star-meta {
+    display: flex;
+  }
+  /* phones: only the bright stars keep a standing label; the rest name themselves on tap */
+  .star.port-quiet:not(.is-hot) .star-label {
+    opacity: 0;
+    pointer-events: none;
+  }
   .anchor {
     font-size: 0.625rem;
     letter-spacing: 0.22em;
@@ -834,6 +906,23 @@ a.star:focus-visible {
     font-size: 1rem;
     letter-spacing: 0;
   }
+}
+
+/* runtime declutter (app.ts): a label that cannot find a free side waits for hover / tap */
+.star[data-side='r'] {
+  flex-direction: row;
+  transform: translate(-22px, -50%);
+  text-align: start;
+}
+.star[data-side='l'] {
+  flex-direction: row-reverse;
+  transform: translate(calc(-100% + 22px), -50%);
+  text-align: end;
+}
+.star.is-crowded:not(.is-hot) .star-label,
+.anchor.is-crowded:not(.is-hot) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* arrival: the chart lights star by star (CSS only, so it runs before any script) */
@@ -981,10 +1070,58 @@ body[data-page='notfound'] main {
   margin: 14px 0 0;
   color: var(--muted);
 }
+/* mid: the chart takes the right 62%, the copy the left column (no shared pixels, no collisions) */
+@media (min-width: 761px) and (max-width: 1180px) and (orientation: landscape) {
+  .hero > .sky-stage,
+  .lost > .sky-stage {
+    inset: 0 0 auto 38%;
+  }
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .hero-copy {
+    max-width: calc(38vw - var(--gutter));
+  }
+  .hero .display {
+    font-size: clamp(2.5rem, 4.6vw, 3.5rem);
+  }
+  .hero-lede {
+    font-size: 1.0625rem;
+  }
+  .hero-actions .btn {
+    padding: 0 16px;
+  }
+  .legend {
+    display: none;
+  }
+}
+/* port: the chart is its own box between header and copy */
+@media (max-width: 760px), (max-width: 1180px) and (orientation: portrait) {
+  .hero,
+  .lost {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: var(--header-h);
+  }
+  .hero > .sky-stage,
+  .lost > .sky-stage {
+    position: relative;
+    inset: auto;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 360px;
+    margin-inline: calc(-1 * var(--gutter));
+  }
+  .lost > .sky-stage {
+    margin-inline: 0;
+  }
+  .hero-hint {
+    display: none;
+  }
+}
 @media (max-width: 760px) {
   .hero {
-    grid-template-columns: 1fr;
-    align-content: end;
     padding-bottom: 32px;
     min-height: 100svh;
   }
@@ -1709,6 +1846,13 @@ main {
 [data-theme='dark'] .astro-code span {
   color: var(--shiki-dark);
 }
+/* github-light / github-dark comments (#6A737D) miss 4.5:1 on our grounds */
+.astro-code span[style*='--shiki-light:#6A737D'] {
+  color: #57606a;
+}
+[data-theme='dark'] .astro-code span[style*='--shiki-dark:#6A737D'] {
+  color: #8b949e;
+}
 
 .notice {
   display: flex;
@@ -2058,37 +2202,39 @@ main {
   animation: none !important;
 }
 
-/* ---------- reading mode + reduced motion: a calm, static page ---------- */
+/* ---------- reduced motion: the static chart stays (it does not move); reading mode: the plain page ---------- */
 [data-motion='reduce'] .sky-canvas,
-[data-motion='reduce'] .warp {
+[data-motion='reduce'] .warp,
+[data-motion='reduce'] .hero-hint {
   display: none;
 }
-[data-motion='reduce'] .sky-stage:not(.keep-static),
-[data-motion='reduce'] .legend,
-[data-motion='reduce'] .hero-hint,
-[data-motion='reduce'] .hero-actions a[href='#catalogue'] {
+[data-reading='on'] .sky-stage:not(.keep-static),
+[data-reading='on'] .legend,
+[data-reading='on'] .hero-actions a[href='#catalogue'] {
   display: none;
 }
-[data-motion='reduce'] .nebula {
+[data-reading='on'] .nebula {
   background: var(--bg);
 }
-[data-motion='reduce'] .hero {
+[data-reading='on'] .hero {
+  display: grid;
   min-height: auto;
   max-width: 52rem;
   grid-template-columns: minmax(0, 1fr);
   padding-top: calc(var(--header-h) + clamp(24px, 5vh, 64px));
   padding-bottom: 0;
 }
-[data-motion='reduce'] body[data-page='home'] .catalogue {
+[data-reading='on'] body[data-page='home'] .catalogue {
   padding-top: 64px;
 }
-[data-motion='reduce'] .plate--sky:has(> .sky-stage:not(.keep-static)) {
+[data-reading='on'] .plate--sky:has(> .sky-stage:not(.keep-static)) {
   grid-template-columns: minmax(0, 1fr);
 }
-[data-motion='reduce'] .article-head {
+[data-reading='on'] .article-head {
   grid-template-columns: minmax(0, 1fr);
 }
-[data-motion='reduce'] .lost {
+[data-reading='on'] .lost {
+  display: grid;
   min-height: auto;
   padding-top: calc(var(--header-h) + 64px);
 }
