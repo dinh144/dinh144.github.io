@@ -14,12 +14,10 @@
  */
 import { motionAllowed } from '@blog/core/client/preferences';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { isPaused } from './tempo-state';
 import { lockLines, type AxisState, type Locked } from './lines';
 
-gsap.registerPlugin(ScrollTrigger);
 
 const BASE_BPM = 96;
 const MAX_BOOST = 72;
@@ -258,18 +256,21 @@ function setOnBeat(el: HTMLElement, step = 0.25): Part {
 /* ---------- prose headings set on the beat as they enter ---------- */
 function headingsPart(prose: HTMLElement): Part {
   const subs: Part[] = [];
-  const triggers = [...prose.querySelectorAll<HTMLElement>('h2, h3')].map((h) => {
-    return ScrollTrigger.create({
-      trigger: h,
-      start: 'top 88%',
-      once: true,
-      onEnter: () => subs.push(setOnBeat(h, 0.125)),
-    });
-  });
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        io.unobserve(entry.target);
+        subs.push(setOnBeat(entry.target as HTMLElement, 0.125));
+      }
+    },
+    { rootMargin: '0px 0px -12% 0px' },
+  );
+  prose.querySelectorAll<HTMLElement>('h2, h3').forEach((h) => io.observe(h));
   return {
     update() {},
     destroy() {
-      triggers.forEach((t) => t.kill());
+      io.disconnect();
       subs.forEach((s) => s.destroy());
     },
   };
@@ -330,7 +331,6 @@ export function mountPage() {
   if (wordmark) parts.push(wavePart(wordmark, true));
   const lost = document.querySelector<HTMLElement>('.lost-digits');
   if (lost) parts.push(wavePart(lost, false));
-  ScrollTrigger.refresh();
 }
 
 export function unmountPage() {
@@ -357,7 +357,6 @@ function onResize() {
     if (window.innerWidth === lastWidth) return;
     lastWidth = window.innerWidth;
     parts.forEach((p) => p.relock?.());
-    ScrollTrigger.refresh();
   }, 160);
 }
 
@@ -372,7 +371,6 @@ export async function start() {
   await document.fonts.ready;
   if (!running) return;
   lenis = new Lenis({ lerp: 0.11, smoothWheel: true, anchors: { offset: -24 }, autoRaf: false });
-  lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add(lenisRaf);
   gsap.ticker.add(frame);
   gsap.ticker.lagSmoothing(0);
@@ -395,7 +393,6 @@ export function stop() {
   lenis = undefined;
   window.removeEventListener('resize', onResize);
   document.documentElement.classList.remove('is-kinetic');
-  ScrollTrigger.getAll().forEach((t) => t.kill());
 }
 
 // Lenis must restart for each page: ClientRouter replaces <html> attributes and scroll position.
@@ -407,6 +404,5 @@ document.addEventListener('astro:before-swap', () => {
 document.addEventListener('astro:page-load', () => {
   if (!running || lenis) return;
   lenis = new Lenis({ lerp: 0.11, smoothWheel: true, anchors: { offset: -24 }, autoRaf: false });
-  lenis.on('scroll', ScrollTrigger.update);
   document.documentElement.classList.add('is-kinetic');
 });

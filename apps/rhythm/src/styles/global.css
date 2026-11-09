@@ -481,8 +481,22 @@ p {
   row-gap: 0.5rem;
   align-items: center;
 }
+/* A time signature at the head of the score, set like the opening of a stave. */
+.timesig {
+  grid-column: 1 / span 1;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font: 900 clamp(1.6rem, 1rem + 2vw, 2.75rem) / 0.78 var(--display);
+  font-stretch: 75%;
+  font-variant-numeric: tabular-nums;
+  align-self: start;
+  padding-top: 0.35rem;
+}
+
 .score-label {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
   display: flex;
   gap: 1rem;
   margin: 0;
@@ -494,7 +508,7 @@ p {
   color: var(--muted);
 }
 .filters {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
 }
 .filters ul {
   display: flex;
@@ -525,11 +539,12 @@ p {
   color: var(--paper);
 }
 @media (min-width: 1024px) {
-  .score-label {
-    grid-column: 1 / span 3;
+  .timesig {
+    grid-column: 1 / span 2;
   }
+  .score-label,
   .filters {
-    grid-column: 4 / -1;
+    grid-column: 3 / -1;
   }
 }
 
@@ -760,7 +775,8 @@ p {
   color: var(--ink);
   text-decoration: none;
   font-family: var(--display);
-  font-size: calc(1.5rem + 3rem * var(--w));
+  font-size: calc(1.3rem + min(3rem, 6vw) * var(--w));
+  white-space: nowrap;
   font-weight: calc(380 + 480 * var(--w));
   font-stretch: calc(80% + 40% * var(--w));
   letter-spacing: -0.02em;
@@ -815,7 +831,7 @@ p {
   color: var(--muted);
 }
 .meta-type {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.15rem;
   color: var(--ink);
   font-weight: 500;
 }
@@ -834,6 +850,17 @@ p {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+}
+@media (max-width: 1023px) {
+  .article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 1.25rem;
+  }
+  .meta-type {
+    margin: 0;
+  }
 }
 @media (min-width: 1024px) {
   .article-title {
@@ -1222,6 +1249,7 @@ p {
 }
 .series-name a {
   color: var(--ink);
+  text-decoration-thickness: 1px;
 }
 .series-name span {
   font: 400 0.75rem/1 var(--mono);
