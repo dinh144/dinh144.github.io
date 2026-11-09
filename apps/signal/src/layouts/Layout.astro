@@ -27,9 +27,11 @@ interface Props {
   /** Show the reading-mode toggle and progress (article pages). */
   reading?: boolean;
   noindex?: boolean;
+  /** 'lost' on the 404 page: the status line reports no signal. */
+  signal?: 'lost';
 }
 
-const { locale, reading = false, ...seo } = Astro.props;
+const { locale, reading = false, signal, ...seo } = Astro.props;
 const here = unlocalize(Astro.url.pathname);
 const other = otherLocale(locale);
 const otherHref =
@@ -93,7 +95,7 @@ const crt = {
     <Seo locale={locale} {...seo} />
     <ClientRouter />
   </head>
-  <body data-reading-page={reading ? 'on' : 'off'}>
+  <body data-reading-page={reading ? 'on' : 'off'} data-signal={signal}>
     <a class="skip" href="#main">
       {c(locale, 'skip')}
     </a>

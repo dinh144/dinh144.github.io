@@ -46,6 +46,9 @@ const fill = '─'.repeat(160);
       </a>
     ))}
   </nav>
+  <p class="keys">
+    <kbd>j</kbd> <kbd>k</kbd> {c(locale, 'keys.move')} · <kbd>/</kbd> {c(locale, 'keys.search')}
+  </p>
   {posts.length ? (
     <ol class="stream">
       {days.map((day) => (

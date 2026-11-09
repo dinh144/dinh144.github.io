@@ -12,7 +12,7 @@ const list = await getSeriesList(locale);
 ---
 
 <Layout locale={locale} title={t(locale, 'nav.series')}>
-  <Opener title={t(locale, 'nav.series')} seedKey="series-index" shape="knot" />
+  <Opener title={t(locale, 'nav.series')} seedKey="series-index" shape="knot" composition="bleed" />
   <section class="wrap feed">
     {list.length ? (
       <ol class="listing">

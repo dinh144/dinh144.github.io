@@ -26,11 +26,14 @@ const screens = [
     <span class="led" aria-hidden="true"></span>
     <span class="txt">
       <span class="live-label">
-        {c(locale, 'status.signal')}: {c(locale, 'status.locked')}
+        <span class="pre">{c(locale, 'status.signal')}: </span>
+        {c(locale, 'status.locked')}
       </span>
       <span class="static-label">
-        {c(locale, 'status.signal')}: {c(locale, 'status.static')}
+        <span class="pre">{c(locale, 'status.signal')}: </span>
+        {c(locale, 'status.static')}
       </span>
+      <span class="lost-label">{c(locale, 'nosignal')}</span>
     </span>
   </span>
   {reading ? (

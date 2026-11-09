@@ -175,9 +175,22 @@ function bindCode() {
 
 /* ---------- `/` opens search ---------- */
 function onKey(e: KeyboardEvent) {
-  if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
   const target = e.target as HTMLElement;
   if (target.closest('input, textarea, select, [contenteditable]')) return;
+  if (e.key === 'j' || e.key === 'k') {
+    // Move through feed entries like a pager: j next, k previous.
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.row-title a, .series-row h2 a')];
+    if (!links.length) return;
+    const i = links.indexOf(document.activeElement as HTMLAnchorElement);
+    const next = links[Math.min(links.length - 1, Math.max(0, i === -1 ? 0 : i + (e.key === 'j' ? 1 : -1)))];
+    e.preventDefault();
+    next.focus({ preventScroll: true });
+    next.closest('li')?.scrollIntoView({ block: 'center', behavior: motionAllowed() ? 'smooth' : 'auto' });
+    tick(e.key === 'j' ? 1 : 1.1);
+    return;
+  }
+  if (e.key !== '/') return;
   const input = document.querySelector<HTMLInputElement>('.pagefind-ui__search-input');
   e.preventDefault();
   if (input) return input.focus();
@@ -218,9 +231,20 @@ function stopEffects() {
 /* ---------- narrow screens: keep the current section visible in the scrolling nav ---------- */
 function revealCurrentNav() {
   const nav = document.querySelector<HTMLElement>('.site-header .nav');
-  const current = nav?.querySelector<HTMLElement>('[aria-current="page"]');
-  if (!nav || !current || nav.scrollWidth <= nav.clientWidth) return;
-  nav.scrollLeft = Math.max(0, current.offsetLeft - nav.clientWidth / 2 + current.offsetWidth / 2);
+  if (!nav) return;
+  // The fade at the right edge only shows while there is more nav to scroll to.
+  const sync = () => {
+    nav.classList.toggle('is-overflowing', nav.scrollWidth > nav.clientWidth + 1);
+    nav.classList.toggle('at-end', nav.scrollLeft + nav.clientWidth >= nav.scrollWidth - 2);
+  };
+  const current = nav.querySelector<HTMLElement>('[aria-current="page"]');
+  if (current && nav.scrollWidth > nav.clientWidth) {
+    nav.scrollLeft = Math.max(0, current.offsetLeft - nav.clientWidth / 2 + current.offsetWidth / 2);
+  }
+  sync();
+  nav.addEventListener('scroll', sync, { passive: true });
+  window.addEventListener('resize', sync);
+  pageCleanup.push(() => window.removeEventListener('resize', sync));
 }
 
 function onPageLoad() {

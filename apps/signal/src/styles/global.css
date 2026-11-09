@@ -40,7 +40,7 @@
   --t-h3: 1.1875rem;
   --t-h2: 1.5rem;
   --t-title: clamp(2rem, 1.2rem + 3.6vw, 4rem);
-  --t-hero: clamp(2.125rem, 1.1rem + 4.4vw, 4.75rem);
+  --t-hero: clamp(2.125rem, 1.1rem + 4vw, 4.375rem);
 
   --gutter: clamp(16px, 4vw, 48px);
   --max: 1320px;
@@ -175,7 +175,10 @@ p {
   z-index: 100;
   background: var(--accent);
   color: var(--accent-ink);
-  padding: 12px 16px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
   font: 600 var(--t-ui) / 1 var(--mono);
   text-decoration: none;
 }
@@ -306,6 +309,8 @@ p {
     padding: 0 calc(var(--gutter) - 10px) 6px;
     overflow-x: auto;
     scrollbar-width: none;
+  }
+  .nav.is-overflowing:not(.at-end) {
     mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
   }
   .nav::-webkit-scrollbar {
@@ -344,6 +349,18 @@ p {
   border-radius: 50%;
   background: var(--green);
   box-shadow: 0 0 8px var(--green);
+}
+body[data-signal='lost'] .status .sig .led {
+  background: #e5484d;
+  box-shadow: 0 0 8px #e5484d;
+}
+.status .sig .lost-label,
+[data-signal='lost'] .status .sig .live-label,
+[data-signal='lost'] .status .sig .static-label {
+  display: none !important;
+}
+[data-signal='lost'] .status .sig .lost-label {
+  display: inline !important;
 }
 [data-motion='reduce'] .status .sig .led {
   background: var(--muted);
@@ -437,8 +454,12 @@ p {
   }
 }
 @media (max-width: 520px) {
-  .status .sig .txt {
+  .status .sig .pre,
+  .status .progress .blocks {
     display: none;
+  }
+  .status {
+    gap: 8px;
   }
 }
 
@@ -524,12 +545,12 @@ p {
   pointer-events: none;
   white-space: nowrap;
 }
-.hud span::before {
+.hud > span::before {
   content: '·';
   margin-right: 1.6ch;
   color: var(--rule-strong);
 }
-.hud span:first-child::before {
+.hud > span:first-child::before {
   content: none;
 }
 .hud [data-hud-shape] {
@@ -570,7 +591,7 @@ p {
 }
 .hero h1 {
   margin: 0;
-  max-width: 15.5ch;
+  max-width: 14ch;
   font: 700 var(--t-hero) / 1.13 var(--mono);
   letter-spacing: -0.035em;
   color: var(--ink-strong);
@@ -759,7 +780,7 @@ p {
   .opener > .field {
     position: relative;
     inset: auto;
-    height: 168px;
+    height: 192px;
     margin-bottom: -40px;
     mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
   }
@@ -823,6 +844,40 @@ p {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-ink);
+}
+.keys {
+  margin: 4px 0 0;
+  font: 500 var(--t-xs) / 1.6 var(--mono);
+  color: var(--muted);
+}
+.keys kbd,
+.tool .kbd {
+  display: inline-block;
+  min-width: 2.2ch;
+  padding: 1px 5px;
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  font: inherit;
+  color: var(--ink);
+  text-align: center;
+}
+@media (hover: none), (max-width: 899px) {
+  .keys,
+  .tool .kbd {
+    display: none;
+  }
+}
+.hud .narrow {
+  display: none;
+}
+@media (max-width: 639px) {
+  .hud .wide {
+    display: none;
+  }
+  .hud .narrow {
+    display: inline;
+  }
 }
 .stream,
 .day-list {
@@ -1026,13 +1081,13 @@ p {
 /* ---------- article ---------- */
 .article-body {
   display: grid;
-  grid-template-columns: minmax(0, var(--measure));
+  grid-template-columns: minmax(0, 40rem);
   gap: 40px 64px;
   padding-block: 48px 96px;
 }
 @media (min-width: 1100px) {
   .article-body {
-    grid-template-columns: minmax(0, var(--measure)) minmax(220px, 300px);
+    grid-template-columns: minmax(0, 40rem) minmax(220px, 300px);
     justify-content: space-between;
   }
   .article-body .toc {
@@ -1294,6 +1349,22 @@ p {
 [data-theme='light'] .astro-code span {
   color: var(--shiki-light);
 }
+/* github-light/dark tokens that miss 4.5:1 on this theme's code surface, nudged darker or lighter. */
+[data-theme='light'] .astro-code span[style*='--shiki-light:#6A737D'] {
+  color: #57606a;
+}
+[data-theme='light'] .astro-code span[style*='--shiki-light:#D73A49'] {
+  color: #b31d28;
+}
+[data-theme='light'] .astro-code span[style*='--shiki-light:#E36209'] {
+  color: #a04100;
+}
+[data-theme='light'] .astro-code span[style*='--shiki-light:#22863A'] {
+  color: #1a6b2e;
+}
+[data-theme='dark']:not([data-screen='phosphor']) .astro-code span[style*='--shiki-dark:#6A737D'] {
+  color: #959da5;
+}
 [data-screen='phosphor'][data-theme='dark'] .astro-code span {
   color: var(--ink);
 }
@@ -1416,6 +1487,16 @@ p {
   margin: 2.4em 0 0;
   padding: 0;
   list-style: none;
+}
+.prose ul.tags {
+  padding-left: 0;
+}
+.prose ul.tags > li {
+  margin: 0;
+  padding: 0;
+}
+.prose ul.tags > li::marker {
+  content: none;
 }
 .tags a {
   display: inline-flex;

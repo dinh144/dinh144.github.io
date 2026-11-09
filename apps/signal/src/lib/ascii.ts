@@ -78,7 +78,7 @@ export function asciiFrame(o: AsciiOptions): string {
   const staticRate = o.static ?? 0.025;
   const aspect = o.cols / (o.rows * cellAspect);
   const a = (o.seed % 628) / 100;
-  const b = 0.55 + ((o.seed >> 4) % 60) / 100;
+  const b = 0.75 + ((o.seed >> 4) % 60) / 200;
   const light = (() => {
     const l: V3 = [-0.5, 0.75, 0.6];
     const n = len3(...l);

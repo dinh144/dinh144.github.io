@@ -12,7 +12,7 @@ const { locale } = Astro.props as { locale: Locale };
 ---
 
 <Layout locale={locale} title={t(locale, 'search.title')} noindex>
-  <Opener title={t(locale, 'search.title')} seedKey="search" shape="torus" />
+  <Opener title={t(locale, 'search.title')} seedKey="search" shape="torus" composition="bleed" />
   <div class="wrap search-shell">
     <p class="search-hint">
       <span aria-hidden="true">$ {c(locale, 'search.cmd')} · </span>

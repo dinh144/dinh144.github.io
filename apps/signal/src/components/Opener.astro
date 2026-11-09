@@ -11,13 +11,15 @@ interface Props {
   shape?: ShapeName;
   dek?: string;
   lang?: string;
+  /** 'bleed' for list pages: a close-up of the shape running off the edge. */
+  composition?: 'band' | 'bleed';
 }
-const { title, seedKey, shape, dek, lang } = Astro.props;
+const { title, seedKey, shape, dek, lang, composition = 'band' } = Astro.props;
 const seed = hashString(seedKey);
 ---
 
 <header class="opener">
-  <AsciiField variant="band" seed={seed} shape={shape} />
+  <AsciiField variant={composition} seed={seed} shape={shape} />
   <div class="opener-copy wrap" lang={lang}>
     <h1 class="page-title">
       <span class="hash" aria-hidden="true">

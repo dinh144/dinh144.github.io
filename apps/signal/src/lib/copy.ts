@@ -35,6 +35,8 @@ const COPY = {
     'tags.posts': 'bài',
     'about.cmd': 'cat about.md',
     'search.cmd': 'grep -ri',
+    'keys.move': 'chuyển bài',
+    'keys.search': 'tìm kiếm',
   },
   en: {
     skip: 'Skip to content',
@@ -66,6 +68,8 @@ const COPY = {
     'tags.posts': 'posts',
     'about.cmd': 'cat about.md',
     'search.cmd': 'grep -ri',
+    'keys.move': 'move between entries',
+    'keys.search': 'search',
   },
 } as const;
 

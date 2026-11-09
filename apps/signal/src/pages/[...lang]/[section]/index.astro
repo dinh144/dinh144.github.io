@@ -16,7 +16,7 @@ const shape = section === 'posts' ? 'torus' : section === 'notes' ? 'octa' : 'bl
 ---
 
 <Layout locale={locale} title={title}>
-  <Opener title={title} seedKey={`section-${section}`} shape={shape}>
+  <Opener title={title} seedKey={`section-${section}`} shape={shape} composition="bleed">
     <p class="meta">
       <span>{c(locale, 'feed.count', { n: posts.length })}</span>
     </p>

@@ -6,7 +6,7 @@ import Layout from '../layouts/Layout.astro';
 import { c } from '../lib/copy';
 ---
 
-<Layout locale="vi" title={t('vi', 'notfound.title')} noindex>
+<Layout locale="vi" title={t('vi', 'notfound.title')} noindex signal="lost">
   <section class="void">
     <AsciiField variant="void" seed={404} shape="none" />
     <div class="void-copy">

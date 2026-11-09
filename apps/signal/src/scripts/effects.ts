@@ -1,39 +1,85 @@
 /**
- * Everything that moves: Lenis smooth scroll, GSAP decode (ScrambleText), scroll choreography and the
+ * Everything that moves: Lenis smooth scroll, GSAP-driven title decode, scroll choreography and the
  * WebGL signal field. Loaded only while motionAllowed(); stop() returns the page to its static state.
  */
 import { motionAllowed } from '@blog/core/client/preferences';
 import { tick } from '@blog/core/client/sound';
 import { gsap } from 'gsap';
-import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import type { SignalField } from './ascii/engine';
 
-gsap.registerPlugin(ScrollTrigger, ScrambleTextPlugin);
+gsap.registerPlugin(ScrollTrigger);
 
-// ScrambleText writes HTML, so the noise set avoids <, > and &.
+// Glyphs JetBrains Mono draws at the same advance as letters.
 const NOISE = '░▒▓/\\|_#*+=01:';
+// Titles decode through lighter glyphs; the heavy blocks read as holes at display sizes.
+const TITLE_NOISE = '░/\\|_#*+=01:<>';
 let lenis: Lenis | undefined;
 let lenisRaf: ((time: number) => void) | undefined;
 let ctx: gsap.Context | undefined;
 let field: SignalField | undefined;
 let fieldLoading: Promise<SignalField> | undefined;
 let generation = 0;
+let triggersDisabled = false;
 const listeners: (() => void)[] = [];
 
+/**
+ * Decode a title from glyph noise. Every character keeps its slot and spaces are never replaced, so
+ * in a monospace face the line breaks and box size never change (no layout shift). Each character
+ * flickers through noise until its own reveal time, sweeping left to right with a little jitter.
+ */
 function decodeEl(el: HTMLElement, opts: { duration?: number; delay?: number } = {}) {
   const text = el.dataset.text ?? el.textContent ?? '';
   el.dataset.text = text;
-  // Titles with markup-like characters skip the scramble rather than risk mangled text.
-  if (/[<>&]/.test(text))
-    return gsap.fromTo(el, { opacity: 0.2 }, { opacity: 1, duration: 0.5, delay: opts.delay ?? 0 });
-  return gsap.to(el, {
+  const chars = [...text];
+  const reveal = chars.map((_, i) => 0.15 + (i / Math.max(1, chars.length)) * 0.7 + Math.random() * 0.15);
+  const state = { p: 0 };
+  let lastFrame = -1;
+  return gsap.to(state, {
+    p: 1,
     duration: opts.duration ?? Math.min(1.1, 0.35 + text.length * 0.012),
     delay: opts.delay ?? 0,
     ease: 'none',
-    scrambleText: { text, chars: NOISE, revealDelay: 0.15, speed: 0.9, tweenLength: false },
+    onUpdate: () => {
+      // Noise changes at about 30 Hz, like a refreshing terminal, not every frame.
+      const frame = Math.floor(state.p * 40);
+      if (frame === lastFrame) return;
+      lastFrame = frame;
+      el.textContent = chars
+        .map((ch, i) =>
+          ch === ' ' || ch === '\n' || state.p >= reveal[i] ? ch : TITLE_NOISE[(Math.random() * TITLE_NOISE.length) | 0],
+        )
+        .join('');
+    },
+    onComplete: () => {
+      el.textContent = text;
+    },
   });
+}
+
+/** A row's thumbnail loses lock for a moment, then settles back on its picture. */
+function glitchThumb(el: HTMLElement | null) {
+  if (!el || el.dataset.busy) return;
+  const original = el.dataset.frame ?? el.textContent ?? '';
+  el.dataset.frame = original;
+  el.dataset.busy = '1';
+  let frame = 0;
+  const step = () => {
+    frame++;
+    const amount = frame < 4 ? 0.35 : 0.35 * (1 - (frame - 4) / 5);
+    el.textContent = [...original]
+      .map((ch) =>
+        ch !== ' ' && ch !== '\n' && Math.random() < amount ? NOISE[(Math.random() * NOISE.length) | 0] : ch,
+      )
+      .join('');
+    if (frame < 9) setTimeout(step, 40);
+    else {
+      el.textContent = original;
+      delete el.dataset.busy;
+    }
+  };
+  step();
 }
 
 function getField(): Promise<SignalField> {
@@ -68,7 +114,7 @@ async function mountField(gen: number) {
     const shape = hud.querySelector<HTMLElement>('[data-hud-shape]')!;
     const grid = hud.querySelector<HTMLElement>('[data-hud-grid]')!;
     const rate = hud.querySelector<HTMLElement>('[data-hud-rate]')!;
-    const initial = { shape: shape.textContent, grid: grid.textContent, rate: rate.textContent };
+    const initial = { shape: shape.innerHTML, grid: grid.innerHTML, rate: rate.innerHTML };
     f.onStats = (s) => {
       if (host.dataset.shape !== 'none') shape.textContent = s.shape;
       grid.textContent = `${s.cols}×${s.rows}`;
@@ -76,9 +122,9 @@ async function mountField(gen: number) {
     };
     listeners.push(() => {
       f.onStats = undefined;
-      shape.textContent = initial.shape;
-      grid.textContent = initial.grid;
-      rate.textContent = initial.rate;
+      shape.innerHTML = initial.shape;
+      grid.innerHTML = initial.grid;
+      rate.innerHTML = initial.rate;
     });
   }
   // Scroll choreography for the field: the shape spins and lifts as you leave it, then the signal breaks up.
@@ -194,6 +240,7 @@ function choreograph() {
     lastTick = now;
     const row = e.currentTarget as HTMLElement;
     tick(0.9 + (rows.indexOf(row) % 5) * 0.05);
+    glitchThumb(row.querySelector<HTMLElement>('.row-thumb'));
   };
   rows.forEach((r) => r.addEventListener('pointerenter', onOver));
   listeners.push(() => rows.forEach((r) => r.removeEventListener('pointerenter', onOver)));
@@ -203,6 +250,11 @@ export function start() {
   if (!motionAllowed()) return;
   stop();
   const gen = ++generation;
+  gsap.ticker.wake();
+  if (triggersDisabled) {
+    ScrollTrigger.enable();
+    triggersDisabled = false;
+  }
   lenis = new Lenis({ autoRaf: false, anchors: true, lerp: 0.11 });
   lenis.on('scroll', ScrollTrigger.update);
   lenisRaf = (time: number) => lenis?.raf(time * 1000);
@@ -220,6 +272,14 @@ export function stop() {
   lenis = undefined;
   ctx?.revert();
   ctx = undefined;
+  // ScrollTrigger keeps its own rAF loop while enabled; switch it off entirely while the page is still.
+  if (!triggersDisabled) {
+    ScrollTrigger.disable(false, true);
+    triggersDisabled = true;
+  }
+  gsap.globalTimeline.clear();
+  // Nothing should run while the page is still: let the ticker stop requesting frames.
+  gsap.ticker.sleep();
   while (listeners.length) listeners.pop()!();
   // Any title caught mid-decode gets its real text back.
   document.querySelectorAll<HTMLElement>('[data-decode][data-text]').forEach((el) => {

@@ -228,7 +228,7 @@ export class SignalField {
     fu.uCenterX.value = opts.centerX;
     fu.uCenterY.value = opts.centerY;
     fu.uScale.value = opts.scale;
-    fu.uRot.value.set((opts.seed % 628) / 100, 0.55 + ((opts.seed >> 4) % 60) / 100);
+    fu.uRot.value.set((opts.seed % 628) / 100, 0.75 + ((opts.seed >> 4) % 60) / 200);
     const gu = this.glyphMat.uniforms;
     gu.uDecode.value = 0;
     gu.uStatic.value = opts.static;
@@ -373,7 +373,8 @@ export class SignalField {
     gu.uTime.value = t;
     const seedRot = (this.opts.seed % 628) / 100;
     fu.uRot.value.x = seedRot + t * 0.18 + this.scroll.spin;
-    fu.uRot.value.y = 0.55 + Math.sin(t * 0.21) * 0.25 + ((this.opts.seed >> 4) % 60) / 100 - 0.3;
+    // Keep the shape tilted towards the viewer so rings never read edge-on.
+    fu.uRot.value.y = 0.75 + Math.sin(t * 0.21) * 0.2 + ((this.opts.seed >> 4) % 60) / 200;
     fu.uWobble.value = p.amt;
     fu.uCenterY.value = this.opts.centerY + this.scroll.lift;
     fu.uPointer.value.set(p.wx, p.wy, p.amt * 0.9);
