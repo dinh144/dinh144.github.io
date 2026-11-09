@@ -1,0 +1,54 @@
+---
+/**
+ * One bar of the score: bar number, title (the kinetic part), dek, and the meta column.
+ * Articles are set loud, notes and links quieter, so the stack reads with dynamics.
+ */
+import { formatDate, t } from '@blog/core/i18n';
+import type { Post } from '@blog/core/posts';
+import { paths } from '@blog/core/routes';
+import { bar } from '../lib/copy';
+
+interface Props {
+  post: Post;
+  n: number;
+  heading?: 'h2' | 'h3';
+}
+const { post, n, heading = 'h2' } = Astro.props;
+const { data } = post;
+const Heading = heading;
+const host = data.type === 'link' && data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
+const label =
+  data.type === 'note'
+    ? t(post.locale, 'type.note')
+    : data.type === 'link'
+      ? t(post.locale, 'type.link')
+      : data.series
+        ? `${t(post.locale, 'type.series')} ${data.series.part}`
+        : t(post.locale, 'type.article');
+---
+
+<li class="row" data-type={data.type} data-series={data.series?.id}>
+  <span class="row-no" aria-hidden="true">
+    {bar(n)}
+  </span>
+  <div class="row-main">
+    <Heading class="row-title" transition:name={`title-${post.slug}`}>
+      <a href={paths.post(post)} data-kin>
+        {data.title}
+      </a>
+    </Heading>
+    {data.type !== 'note' && data.description && <p class="row-dek">{data.description}</p>}
+  </div>
+  <p class="row-meta">
+    <span class="row-type">{label}</span>
+    <time datetime={data.date.toISOString()}>{formatDate(data.date, post.locale, 'numeric')}</time>
+    {data.type === 'article' && <span>{t(post.locale, 'post.minutes', { n: post.minutes })}</span>}
+    {host && <span>{host}</span>}
+    {data.tags.length > 0 && <span class="row-tags">{data.tags.map((tag) => `#${tag}`).join(' ')}</span>}
+    {post.fallback && (
+      <span lang="vi" class="row-flag">
+        VI
+      </span>
+    )}
+  </p>
+</li>

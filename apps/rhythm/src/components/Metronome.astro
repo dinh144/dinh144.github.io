@@ -1,0 +1,39 @@
+---
+/**
+ * The site's shared clock, shown as a metronome: live tempo + the four beats of the bar.
+ * It is also the pause control for the type rhythm (WCAG 2.2.2: moving content can be paused).
+ * Hidden when motion is reduced, because then nothing moves.
+ */
+import type { Locale } from '@blog/core/i18n';
+import { c } from '../lib/copy';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+---
+
+<button
+  type="button"
+  class="metro"
+  data-metro
+  aria-pressed="false"
+  aria-label={c(locale, 'tempoPause')}
+  title={c(locale, 'tempoHint')}
+>
+  <span class="metro-bpm" data-bpm>
+    096
+  </span>
+  <span class="metro-unit">{c(locale, 'tempoUnit')}</span>
+  <span class="metro-beats" aria-hidden="true">
+    <i data-beat="0"></i>
+    <i data-beat="1"></i>
+    <i data-beat="2"></i>
+    <i data-beat="3"></i>
+  </span>
+  <svg class="metro-state" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+    <rect class="pause-a" x="2" y="1.5" width="2.6" height="9"></rect>
+    <rect class="pause-b" x="7.4" y="1.5" width="2.6" height="9"></rect>
+    <path class="play" d="M2.5 1.5 10.5 6 2.5 10.5z"></path>
+  </svg>
+</button>

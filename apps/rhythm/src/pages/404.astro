@@ -1,0 +1,33 @@
+---
+import { t } from '@blog/core/i18n';
+import { paths } from '@blog/core/routes';
+import Layout from '../layouts/Layout.astro';
+import { c } from '../lib/copy';
+---
+
+<Layout locale="vi" title={t('vi', 'notfound.title')} noindex kind="page">
+  <section class="lost frame grid">
+    <p class="lost-digits" aria-hidden="true">
+      <span class="wm-ch">4</span>
+      <span class="wm-ch">0</span>
+      <span class="wm-ch">4</span>
+    </p>
+    <h1 class="lost-title">{t('vi', 'notfound.title')}</h1>
+    <div class="lost-copy">
+      <p>{c('vi', 'notFoundLead')}</p>
+      <p lang="en">
+        {t('en', 'notfound.title')}. {c('en', 'notFoundLead')}
+      </p>
+      <ul class="lost-links">
+        <li>
+          <a href={paths.home('vi')}>{t('vi', 'notfound.back')}</a>
+        </li>
+        <li>
+          <a href={paths.home('en')} lang="en">
+            {t('en', 'notfound.back')}
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</Layout>

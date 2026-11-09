@@ -1,0 +1,33 @@
+---
+/**
+ * Opening of list-type pages: a margin note (what this is, how many) and a big kinetic title.
+ */
+interface Props {
+  title: string;
+  note?: string;
+  count?: string;
+  lead?: string;
+  name?: string;
+}
+const { title, note, count, lead, name } = Astro.props;
+---
+
+<header class="page-head frame grid">
+  {(note || count) && (
+    <p class="page-note">
+      {note && <span>{note}</span>}
+      {count && <span class="page-count">{count}</span>}
+    </p>
+  )}
+  {name ? (
+    <h1 class="page-title" data-kin="title" transition:name={name}>
+      {title}
+    </h1>
+  ) : (
+    <h1 class="page-title" data-kin="title">
+      {title}
+    </h1>
+  )}
+  {lead && <p class="page-lead">{lead}</p>}
+  <slot />
+</header>
