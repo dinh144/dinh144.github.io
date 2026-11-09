@@ -3,10 +3,10 @@ import { t } from '@blog/core/i18n';
 import { paths } from '@blog/core/routes';
 import SkyStage from '../components/SkyStage.astro';
 import Layout from '../layouts/Layout.astro';
-import { WORLD, getSky } from '../lib/sky';
+import { getSky, worldFrame } from '../lib/sky';
 
 const sky = await getSky('vi');
-const frame = { land: { x: 0, y: 0, ...WORLD.land }, port: { x: 0, y: 0, ...WORLD.port } };
+const frame = worldFrame();
 ---
 
 <Layout locale="vi" title={t('vi', 'notfound.title')} noindex page="notfound">

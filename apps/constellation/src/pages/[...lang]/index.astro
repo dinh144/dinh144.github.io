@@ -8,7 +8,7 @@ import PostCard from '../../components/PostCard.astro';
 import SkyStage from '../../components/SkyStage.astro';
 import StarGlyph from '../../components/StarGlyph.astro';
 import Layout from '../../layouts/Layout.astro';
-import { WORLD, getSky } from '../../lib/sky';
+import { getSky, worldFrame } from '../../lib/sky';
 
 export const getStaticPaths = () => localePaths();
 
@@ -23,7 +23,7 @@ const counts = sky.counts;
 const stats = vi
   ? `${counts.stars} ngôi sao · ${counts.topics} chủ đề · ${counts.constellations} chòm sao`
   : `${counts.stars} stars · ${counts.topics} topics · ${counts.constellations} ${counts.constellations === 1 ? 'constellation' : 'constellations'}`;
-const frame = { land: { x: 0, y: 0, ...WORLD.land }, port: { x: 0, y: 0, ...WORLD.port } };
+const frame = worldFrame();
 const latest = posts[0];
 ---
 

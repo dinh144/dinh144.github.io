@@ -473,6 +473,15 @@ async function buildSky(locale: Locale): Promise<Sky> {
 }
 
 /* ---------- frames: which region of the sky a stage shows ---------- */
+/** The whole world in every orientation (home hero, 404). */
+export function worldFrame(): Record<Orientation, Rect> {
+  return {
+    land: { x: 0, y: 0, ...WORLD.land },
+    mid: { x: 0, y: 0, ...WORLD.mid },
+    port: { x: 0, y: 0, ...WORLD.port },
+  };
+}
+
 export interface FrameSpec {
   /** Stars the frame is built around; empty = the whole world. */
   focus?: string[];
