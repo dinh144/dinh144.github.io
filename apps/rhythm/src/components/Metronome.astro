@@ -18,13 +18,15 @@ const { locale } = Astro.props;
   class="metro"
   data-metro
   aria-pressed="false"
-  aria-label={c(locale, 'tempoPause')}
+  aria-label={`${c(locale, 'tempoUnit')}: ${c(locale, 'tempoPause')}`}
   title={c(locale, 'tempoHint')}
 >
-  <span class="metro-bpm" data-bpm>
+  <span class="metro-bpm" data-bpm aria-hidden="true">
     096
   </span>
-  <span class="metro-unit">{c(locale, 'tempoUnit')}</span>
+  <span class="metro-unit" aria-hidden="true">
+    {c(locale, 'tempoUnit')}
+  </span>
   <span class="metro-beats" aria-hidden="true">
     <i data-beat="0"></i>
     <i data-beat="1"></i>

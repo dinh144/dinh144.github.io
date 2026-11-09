@@ -46,6 +46,11 @@ let mounted = false;
 let blend = 0;
 let resizeTimer = 0;
 let lastWidth = 0;
+/** True once a client-side navigation has happened (the page arrived through a view transition). */
+let swapped = false;
+document.addEventListener('astro:after-swap', () => {
+  swapped = true;
+});
 
 function setAxes(el: HTMLElement, wdth: number, wght: number) {
   el.style.fontStretch = `${wdth.toFixed(1)}%`;
@@ -56,6 +61,7 @@ function setAxes(el: HTMLElement, wdth: number, wght: number) {
 function metronomePart(): Part {
   const bpmEl = document.querySelector<HTMLElement>('[data-bpm]');
   const cells = [...document.querySelectorAll<HTMLElement>('[data-metro] [data-beat]')];
+  const steps = [...document.querySelectorAll<HTMLElement>('.ruler [data-step]')];
   return {
     update(f) {
       const shown = Math.round(f.bpm);
@@ -68,10 +74,19 @@ function metronomePart(): Part {
         clock.lastBeat = beat;
         const idx = ((beat % 4) + 4) % 4;
         cells.forEach((cell, i) => cell.toggleAttribute('data-on', i === idx && !clock.paused));
+        const step = ((beat % 16) + 16) % 16;
+        steps.forEach((s, i) => {
+          s.toggleAttribute('data-on', i === step && !clock.paused);
+          s.toggleAttribute('data-past', i < step);
+        });
       }
     },
     destroy() {
       cells.forEach((cell) => cell.removeAttribute('data-on'));
+      steps.forEach((s) => {
+        s.removeAttribute('data-on');
+        s.removeAttribute('data-past');
+      });
       if (bpmEl) bpmEl.textContent = String(BASE_BPM).padStart(3, '0');
       clock.lastBeat = -1;
       clock.shownBpm = -1;
@@ -109,12 +124,17 @@ type Row = {
   title: HTMLElement;
   no?: HTMLElement;
   locked: Locked;
-  loud: boolean;
   p: number;
   boost: number;
   target: number;
   visible: boolean;
 };
+const FLOOR: AxisState = { wdth: 76, wght: 280 };
+const DYN = {
+  article: { base: { wdth: 90, wght: 580 }, max: { wdth: 125, wght: 900 } },
+  note: { base: { wdth: 78, wght: 320 }, max: { wdth: 110, wght: 640 } },
+  link: { base: { wdth: 92, wght: 420 }, max: { wdth: 118, wght: 720 } },
+} as const;
 const REST = {
   article: { wdth: 100, wght: 740 },
   note: { wdth: 88, wght: 420 },
@@ -131,7 +151,6 @@ function scorePart(list: HTMLElement): Part {
         title,
         no: li.querySelector<HTMLElement>('.row-no') ?? undefined,
         locked: lockLines(title, MAX_STATE),
-        loud: (li.dataset.type ?? 'article') === 'article',
         p: 0,
         boost: 0,
         target: 0,
@@ -183,13 +202,21 @@ function scorePart(list: HTMLElement): Part {
         const lens = Math.exp(-d * d);
         row.p = lerp(row.p, lens, smooth(f.dt, 9));
         row.boost = lerp(row.boost, row.target, smooth(f.dt, 12));
-        const p = clamp(row.p + row.boost, 0, 1);
+        const p = clamp(row.p + row.boost, -1, 1);
         const phase = f.beats - i / 2;
         const e = hit(phase, 7) * accent(phase);
-        const rest = REST[(row.li.dataset.type as keyof typeof REST) ?? 'article'] ?? REST.article;
-        const wdth = row.loud ? 76 + 49 * p + 3 * e : 76 + 36 * p + 2 * e;
-        const wght = row.loud ? 300 + 560 * p + 40 * e : 260 + 360 * p + 30 * e;
-        setAxes(row.title, lerp(rest.wdth, clamp(wdth, 75, 125), blend), lerp(rest.wght, clamp(wght, 200, 900), blend));
+        const type = (row.li.dataset.type as keyof typeof DYN) ?? 'article';
+        const rest = REST[type] ?? REST.article;
+        const dyn = DYN[type] ?? DYN.article;
+        // Each type keeps its dynamic (articles loud, notes quiet) and the lens opens it up from there;
+        // hover neighbours (p < 0) condense below it to make room.
+        const wdth = p >= 0 ? lerp(dyn.base.wdth, dyn.max.wdth, p) : lerp(dyn.base.wdth, FLOOR.wdth, -p);
+        const wght = p >= 0 ? lerp(dyn.base.wght, dyn.max.wght, p) : lerp(dyn.base.wght, FLOOR.wght, -p);
+        setAxes(
+          row.title,
+          lerp(rest.wdth, clamp(wdth + 3 * e, 75, 125), blend),
+          lerp(rest.wght, clamp(wght + 40 * e, 200, 900), blend),
+        );
         row.li.toggleAttribute('data-live', p > 0.72);
         if (row.no) {
           // The metronome: each bar number snaps heavy on its beat, then relaxes.
@@ -324,7 +351,9 @@ export function mountPage() {
     if (list.tagName === 'OL') parts.push(scorePart(list));
   });
   const title = document.querySelector<HTMLElement>('[data-kin="title"]');
-  if (title) parts.push(setOnBeat(title));
+  // A title that just morphed in through the shared-element transition is already in place: don't set it twice.
+  const morphed = swapped && title?.hasAttribute('data-astro-transition-scope');
+  if (title && !morphed) parts.push(setOnBeat(title));
   const prose = document.querySelector<HTMLElement>('[data-prose]');
   if (prose) parts.push(headingsPart(prose));
   const wordmark = document.querySelector<HTMLElement>('.wordmark');

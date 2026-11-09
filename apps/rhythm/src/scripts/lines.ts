@@ -80,6 +80,8 @@ export function lockLines(el: HTMLElement, max: AxisState): Locked {
       if (i) line.append(' ');
       line.append(w);
     });
+    // A real space between locked lines keeps copy-paste and find-in-page working ("blog này", not "blognày").
+    if (vis.childNodes.length) vis.append(' ');
     vis.append(line);
     return line;
   });

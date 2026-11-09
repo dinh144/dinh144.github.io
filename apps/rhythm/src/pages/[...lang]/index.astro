@@ -26,7 +26,9 @@ const filters = [
     <h1 class="hero-title" data-kin="hero">
       {tagline}
     </h1>
-    <p class="hero-hint">{c(locale, 'tempoHint')}</p>
+    <div class="ruler" aria-hidden="true">
+      {Array.from({ length: 16 }, (_, i) => <i data-step={i} class={i % 4 === 0 ? 'down' : undefined}></i>)}
+    </div>
   </section>
   <div class="frame score-head grid">
     <p class="timesig" aria-hidden="true"><span>4</span><span>4</span></p>

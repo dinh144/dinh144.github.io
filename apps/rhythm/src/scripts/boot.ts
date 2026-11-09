@@ -158,6 +158,14 @@ export function boot() {
     motion?.mountPage();
   });
   document.addEventListener('astro:before-preparation', () => turn());
+  // Client-side navigation: hand focus to the new page's heading so keyboard and screen-reader users start there.
+  document.addEventListener('astro:after-swap', () => {
+    if (location.hash) return;
+    const h1 = document.querySelector<HTMLElement>('main h1');
+    if (!h1) return;
+    h1.tabIndex = -1;
+    h1.focus({ preventScroll: true });
+  });
   document.addEventListener('astro:before-swap', () => {
     cleanups.forEach((fn) => fn());
     cleanups = [];
