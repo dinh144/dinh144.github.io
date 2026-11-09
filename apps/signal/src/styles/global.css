@@ -42,7 +42,7 @@
   --t-title: clamp(2rem, 1.2rem + 3.6vw, 4rem);
   --t-hero: clamp(2.125rem, 1.1rem + 4vw, 4.375rem);
 
-  --gutter: clamp(16px, 4vw, 48px);
+  --gutter: clamp(20px, 5vw, 48px);
   --max: 1320px;
   --measure: 68ch;
   --header-h: 60px;
@@ -85,8 +85,8 @@
   --ink: #b4f0aa;
   --ink-strong: #dcffd4;
   --muted: #6caf64;
-  --accent: #e4ffc8;
-  --accent-ink: #040a05;
+  --accent: #6dff7a;
+  --accent-ink: #031004;
   --green: #b4f0aa;
   --blue: #8fe3c0;
   --glow: rgb(120 255 130 / 0.38);
@@ -539,6 +539,13 @@ body[data-signal='lost'] .status .sig .led {
   display: flex;
   gap: 1.6ch;
   margin: 0;
+  /* A readout panel on the tube: its own backing so glyphs never run through the numbers. */
+  padding: 6px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
   font: 500 var(--t-xs) / 1 var(--mono);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -782,7 +789,7 @@ body[data-signal='lost'] .status .sig .led {
     inset: auto;
     height: 192px;
     margin-bottom: -40px;
-    mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 38%, transparent 80%);
   }
   .opener::before {
     content: none;
@@ -1186,6 +1193,69 @@ body[data-signal='lost'] .status .sig .led {
   font-family: var(--mono);
   color: var(--muted);
   font-size: 0.9em;
+}
+/* Footnotes: their own block under a rule, labelled like a terminal section break. */
+.prose sup {
+  line-height: 0;
+}
+.prose a[data-footnote-ref] {
+  padding: 0 0.2ch;
+  font: 600 0.72em/1 var(--mono);
+  text-decoration: none;
+  color: var(--accent);
+}
+.prose a[data-footnote-ref]::before {
+  content: '[' / '';
+}
+.prose a[data-footnote-ref]::after {
+  content: ']' / '';
+}
+.prose .footnotes {
+  margin-top: 3.2em;
+  padding-top: 1.4em;
+  border-top: 1px solid var(--rule-strong);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.prose .footnotes > h2,
+.prose .footnotes > .sr-only {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  margin: 0 0 1em;
+  font: 500 var(--t-sm) / 1.4 var(--mono);
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--muted);
+}
+.prose .footnotes > h2::before {
+  content: '── ' / '';
+  margin: 0;
+  color: var(--rule-strong);
+}
+.prose .footnotes > h2::after {
+  content: ' ──' / '';
+  color: var(--rule-strong);
+}
+.prose .footnotes ol {
+  margin: 0;
+}
+.prose .footnotes li p {
+  margin: 0 0 0.6em;
+}
+.prose .footnotes a[data-footnote-backref] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -12px 0;
+  vertical-align: middle;
+  text-decoration: none;
 }
 .prose blockquote {
   position: relative;
@@ -1653,7 +1723,8 @@ body[data-signal='lost'] .status .sig .led {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: baseline;
-  min-height: 32px;
+  min-height: 44px;
+  align-items: center;
   padding: 4px 0;
   color: var(--muted);
   text-decoration: none;
@@ -1791,6 +1862,10 @@ body[data-signal='lost'] .status .sig .led {
   color: var(--accent);
   width: 50%;
   letter-spacing: 0;
+  /* The bar takes whatever room is left and is cropped, never widening the table on small phones. */
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .tag-table .bar .rest {
   color: var(--rule);
@@ -1882,6 +1957,9 @@ body[data-signal='lost'] .status .sig .led {
 /* ---------- about ---------- */
 .about-body {
   padding-block: 48px 96px;
+}
+.about-body .prose {
+  max-width: 40rem;
 }
 
 /* ---------- 404: no signal ---------- */
@@ -2011,17 +2089,34 @@ body[data-signal='lost'] .status .sig .led {
 [data-theme='light']::view-transition {
   background: #1a1a1a;
 }
-::view-transition-group(root) {
+/* Astro names the page group astro-<hash>-1, not root: match every group. */
+::view-transition-group(*) {
   animation-duration: 0.62s;
 }
-::view-transition-old(root),
-::view-transition-new(root) {
+::view-transition-old(*),
+::view-transition-new(*) {
   mix-blend-mode: normal;
 }
-html[data-motion='reduce']::view-transition-old(root),
-html[data-motion='reduce']::view-transition-new(root),
-html[data-motion='reduce']::view-transition-group(root) {
+/* Reading mode and reduced motion: the page changes in place (signal.ts also skips the transition). */
+html[data-motion='reduce']::view-transition-group(*),
+html[data-motion='reduce']::view-transition-image-pair(*),
+html[data-motion='reduce']::view-transition-old(*),
+html[data-motion='reduce']::view-transition-new(*) {
   animation: none !important;
+}
+html[data-motion='reduce']::view-transition-old(*) {
+  display: none;
+}
+html[data-motion='reduce']::view-transition {
+  background: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-image-pair(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }
 .sweep {
   position: fixed;
@@ -2072,8 +2167,17 @@ html[data-motion='reduce']::view-transition-group(root) {
 [data-reading='on'] .void h1 {
   text-shadow: none;
 }
-[data-reading='on'] .opener > .field {
-  opacity: 0.55;
+/* Reading mode is a quiet screen: no transmission above the title, no readouts. */
+[data-reading='on'] .opener > .field,
+[data-reading='on'] .hud {
+  display: none;
+}
+[data-reading='on'] .opener::before {
+  content: none;
+}
+[data-reading='on'] .opener-copy {
+  min-height: 0;
+  padding-block: 56px 40px;
 }
 @media (prefers-reduced-motion: reduce) {
   *,

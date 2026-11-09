@@ -6,10 +6,11 @@
  */
 
 export const VERT = /* glsl */ `
+attribute vec2 position;
 varying vec2 vUv;
 void main() {
-  vUv = uv;
-  gl_Position = vec4(position.xy, 0.0, 1.0);
+  vUv = position * 0.5 + 0.5;
+  gl_Position = vec4(position, 0.0, 1.0);
 }
 `;
 
@@ -178,6 +179,7 @@ void main() {
   float scan = 1.0 - uScan * (0.5 + 0.5 * cos(gl_FragCoord.y * 3.14159));
   float a = clamp(glyph * scan + halo, 0.0, 1.0) * uAlpha;
   vec3 rgb = (col * glyph * scan + uMain * halo);
-  gl_FragColor = vec4(rgb * uAlpha, a);
+  // Written premultiplied, the same result as SRC_ALPHA blending over a cleared canvas.
+  gl_FragColor = vec4(rgb * uAlpha * a, a);
 }
 `;

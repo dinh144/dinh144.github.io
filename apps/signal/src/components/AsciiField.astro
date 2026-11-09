@@ -19,10 +19,12 @@ const stillShape: ShapeName = shape === 'morph' ? 'torus' : shape === 'none' ? s
 
 // Layout per variant: where the shape sits (fractions of the host) on wide and narrow screens.
 const layout = {
-  hero: { cx: 0.7, cy: 0.52, scale: 0.86, cxSm: 0.5, cySm: 0.7, scaleSm: 0.56, static: 0.03, alpha: 1 },
-  band: { cx: 0.78, cy: 0.5, scale: 1.2, cxSm: 0.66, cySm: 0.5, scaleSm: 1.15, static: 0.022, alpha: 0.9 },
+  // cy runs bottom-up (0 = bottom edge). On phones the band sits above the title, so the shape is
+  // lifted into the top of the band and the mask fades its lower edge before the title starts.
+  hero: { cx: 0.74, cy: 0.52, scale: 0.8, cxSm: 0.5, cySm: 0.7, scaleSm: 0.56, static: 0.03, alpha: 1 },
+  band: { cx: 0.78, cy: 0.5, scale: 1.2, cxSm: 0.68, cySm: 0.6, scaleSm: 1.0, static: 0.022, alpha: 0.9 },
   // A list opener: the shape is huge and runs off the right edge, a close-up of the transmission.
-  bleed: { cx: 0.9, cy: 0.46, scale: 1.9, cxSm: 0.78, cySm: 0.5, scaleSm: 1.6, static: 0.03, alpha: 0.9 },
+  bleed: { cx: 0.9, cy: 0.46, scale: 1.9, cxSm: 0.8, cySm: 0.62, scaleSm: 1.35, static: 0.03, alpha: 0.9 },
   void: { cx: 0.5, cy: 0.5, scale: 0.8, cxSm: 0.5, cySm: 0.5, scaleSm: 0.8, static: 0.06, alpha: 1 },
 }[variant];
 

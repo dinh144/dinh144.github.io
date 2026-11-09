@@ -87,9 +87,15 @@ function getField(): Promise<SignalField> {
   return fieldLoading;
 }
 
+/** Data saver on: keep the server-rendered still frame and never download the WebGL engine. */
+function saveData(): boolean {
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  return Boolean(conn?.saveData) || matchMedia('(prefers-reduced-data: reduce)').matches;
+}
+
 async function mountField(gen: number) {
   const host = document.querySelector<HTMLElement>('[data-field]');
-  if (!host) return;
+  if (!host || saveData()) return;
   let f: SignalField;
   try {
     f = await getField();

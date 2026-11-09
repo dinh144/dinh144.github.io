@@ -258,7 +258,10 @@ function onPageLoad() {
   void startEffects();
 }
 
-function onBeforeSwap() {
+function onBeforeSwap(e: Event) {
+  // Reading mode and reduced motion get an instant page change: no CRT power-off/on at all.
+  // (The CSS guard on ::view-transition-*(*) covers browsers where skipping is not possible.)
+  if (!motionAllowed()) (e as Event & { viewTransition?: ViewTransition }).viewTransition?.skipTransition();
   stopEffects();
   while (pageCleanup.length) pageCleanup.pop()!();
 }
