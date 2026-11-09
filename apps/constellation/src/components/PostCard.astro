@@ -1,0 +1,49 @@
+---
+/** One catalogue entry: chart symbol + date, title, description, meta. The whole row is one link target. */
+import { formatDate, t } from '@blog/core/i18n';
+import type { Post } from '@blog/core/posts';
+import { paths } from '@blog/core/routes';
+import { GREEK } from '../lib/sky';
+import StarGlyph from './StarGlyph.astro';
+
+interface Props {
+  post: Post;
+  heading?: 'h2' | 'h3';
+}
+const { post, heading = 'h3' } = Astro.props;
+const { data } = post;
+const Heading = heading;
+const host = data.type === 'link' && data.link ? new URL(data.link).hostname.replace(/^www\./, '') : undefined;
+const typeLabel = t(post.locale, `type.${data.type}`);
+---
+
+<li class="entry" data-type={data.type} data-slug={post.slug}>
+  <div class="entry-mark">
+    <StarGlyph type={data.type} size={22} />
+    <time datetime={data.date.toISOString()}>{formatDate(data.date, post.locale, 'numeric')}</time>
+  </div>
+  <div class="entry-body">
+    <Heading class="entry-title">
+      <a href={paths.post(post)} data-star={post.slug}>
+        {data.title}
+      </a>
+    </Heading>
+    {data.type !== 'note' && data.description && <p class="entry-desc">{data.description}</p>}
+  </div>
+  <p class="entry-meta">
+      <span class="entry-type">{typeLabel}</span>
+      {data.series && (
+        <span>
+          {GREEK[data.series.part - 1] ?? data.series.part} · {t(post.locale, 'type.series')}
+        </span>
+      )}
+      {data.type === 'article' && <span>{t(post.locale, 'post.minutes', { n: post.minutes })}</span>}
+      {host && <span>{host}</span>}
+      {data.tags.length > 0 && <span class="entry-tags">{data.tags.map((tag) => `#${tag}`).join(' ')}</span>}
+      {post.fallback && (
+        <span class="entry-lang" lang="vi" title={t(post.locale, 'post.fallback')}>
+          VI
+        </span>
+      )}
+  </p>
+</li>

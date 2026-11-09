@@ -1,0 +1,150 @@
+---
+import 'katex/dist/katex.min.css';
+import '@fontsource-variable/fraunces/opsz.css';
+import '@fontsource-variable/fraunces/opsz-italic.css';
+import '@fontsource-variable/source-serif-4/opsz.css';
+import '@fontsource-variable/source-serif-4/opsz-italic.css';
+import '@fontsource-variable/inter/wght.css';
+import '@fontsource-variable/jetbrains-mono/wght.css';
+import '../styles/global.css';
+import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
+import frauncesVi from '@fontsource-variable/fraunces/files/fraunces-vietnamese-opsz-normal.woff2?url';
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import Analytics from '@blog/core/components/Analytics.astro';
+import PrefsInit from '@blog/core/components/PrefsInit.astro';
+import Seo from '@blog/core/components/Seo.astro';
+import { otherLocale, t, type Locale } from '@blog/core/i18n';
+import { paths, switchLocale, unlocalize } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import { ClientRouter } from 'astro:transitions';
+import Icon from '../components/Icon.astro';
+import PrefsControls from '../components/PrefsControls.astro';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  published?: Date;
+  available?: Locale[];
+  /** Show the reading-mode toggle (article pages). */
+  reading?: boolean;
+  noindex?: boolean;
+  /** Page kind, for page-specific choreography and styling. */
+  page?: 'home' | 'list' | 'article' | 'series' | 'tags' | 'tag' | 'about' | 'search' | 'notfound';
+}
+
+const { locale, reading = false, page = 'list', ...seo } = Astro.props;
+const here = unlocalize(Astro.url.pathname);
+const other = otherLocale(locale);
+const otherHref =
+  seo.available && !seo.available.includes(other) ? paths.home(other) : switchLocale(Astro.url.pathname, other);
+const nav = [
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts'), match: '/posts/' },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series'), match: '/series/' },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes'), match: '/notes/' },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links'), match: '/links/' },
+  { href: paths.about(locale), label: t(locale, 'nav.about'), match: '/about/' },
+];
+const vi = locale === 'vi';
+// Pages change on a sky that stays: content drifts up and out, the next page settles in.
+const drift = {
+  old: { name: 'page-out', duration: '240ms', easing: 'cubic-bezier(0.4, 0, 1, 1)', fillMode: 'both' },
+  new: { name: 'page-in', duration: '620ms', delay: '60ms', easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fillMode: 'both' },
+};
+const pageAnim = { forwards: drift, backwards: drift };
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0B1020" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#FAF8F2" media="(prefers-color-scheme: light)" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230B1020'/%3E%3Cpath d='M16 5c.9 6.2 4.8 10.1 11 11-6.2.9-10.1 4.8-11 11-.9-6.2-4.8-10.1-11-11 6.2-.9 10.1-4.8 11-11z' fill='%23E9B86A'/%3E%3C/svg%3E"
+    />
+    <link rel="preload" href={frauncesLatin} as="font" type="font/woff2" crossorigin />
+    {vi && <link rel="preload" href={frauncesVi} as="font" type="font/woff2" crossorigin />}
+    <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+    <PrefsInit />
+    <Seo locale={locale} {...seo} />
+    <ClientRouter />
+  </head>
+  <body data-page={page}>
+    <a class="skip" href="#main">
+      {vi ? 'Bỏ qua tới nội dung' : 'Skip to content'}
+    </a>
+    <div class="sky-layer" transition:persist="sky" transition:name="sky" transition:animate="none" aria-hidden="true">
+      <div class="nebula"></div>
+      <canvas class="sky-canvas"></canvas>
+    </div>
+    <div class="warp" transition:persist="warp" transition:name="warp" transition:animate="none" aria-hidden="true"></div>
+    <header class="site-header" transition:name="site-header" transition:animate="none">
+      <a class="brand" href={paths.home(locale)} aria-label={`${SITE.name}, ${vi ? 'trang chủ' : 'home'}`}>
+        <svg class="brand-star" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 1.5c.7 4.9 3.6 7.8 8.5 8.5-4.9.7-7.8 3.6-8.5 8.5-.7-4.9-3.6-7.8-8.5-8.5 4.9-.7 7.8-3.6 8.5-8.5z"></path>
+        </svg>
+        <span>{SITE.name}</span>
+      </a>
+      <nav class="nav" aria-label={vi ? 'Chính' : 'Main'}>
+        {nav.map((item) => (
+          <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))}
+      </nav>
+      <div class="tools">
+        <a
+          class="icon-btn"
+          href={paths.search(locale)}
+          aria-label={t(locale, 'nav.search')}
+          title={t(locale, 'nav.search')}
+        >
+          <Icon name="search" />
+        </a>
+        <PrefsControls locale={locale} reading={reading} />
+        <a
+          class="icon-btn lang-btn"
+          href={otherHref}
+          hreflang={other}
+          lang={other}
+          aria-label={t(locale, 'lang.switch')}
+          title={t(locale, 'lang.switch')}
+        >
+          {other.toUpperCase()}
+        </a>
+      </div>
+    </header>
+    <main id="main" data-pagefind-body tabindex="-1" transition:name="main" transition:animate={pageAnim}>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <svg class="horizon" viewBox="0 0 1440 140" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <path d="M-40 140 Q720 -20 1480 140" vector-effect="non-scaling-stroke"></path>
+      </svg>
+      <div class="footer-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 1.5c.7 4.9 3.6 7.8 8.5 8.5-4.9.7-7.8 3.6-8.5 8.5-.7-4.9-3.6-7.8-8.5-8.5 4.9-.7 7.8-3.6 8.5-8.5z"></path>
+        </svg>
+      </div>
+      <p class="footer-line">
+        {vi ? 'Một tấm bản đồ sao vẽ bằng những gì mình đã viết.' : 'A star chart drawn from what I have written.'}
+      </p>
+      <nav class="footer-links" aria-label={vi ? 'Chân trang' : 'Footer'}>
+        <a href={paths.rss(locale)}>RSS</a>
+        <a href={paths.tags(locale)}>{t(locale, 'nav.tags')}</a>
+        <a href={paths.search(locale)}>{t(locale, 'nav.search')}</a>
+        <a href={SITE.github}>GitHub</a>
+      </nav>
+      <p class="footer-license">{t(locale, 'footer.license', SITE.license)}</p>
+    </footer>
+    <Analytics locale={locale} />
+    <script>
+      import '../scripts/app';
+    </script>
+  </body>
+</html>

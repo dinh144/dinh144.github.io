@@ -1,0 +1,56 @@
+---
+/**
+ * Theme, sound and reading-mode toggles. Reading mode only shows on article pages.
+ * State lives in @blog/core/client/preferences (data attributes on <html>); the icons swap from those.
+ */
+import { t, type Locale } from '@blog/core/i18n';
+import Icon from './Icon.astro';
+
+interface Props {
+  locale: Locale;
+  reading?: boolean;
+}
+const { locale, reading = false } = Astro.props;
+---
+
+<button
+  type="button"
+  class="icon-btn"
+  data-pref="theme"
+  aria-label={t(locale, 'prefs.theme')}
+  title={t(locale, 'prefs.theme')}
+>
+  <span class="swap swap--dark">
+    <Icon name="sun" />
+  </span>
+  <span class="swap swap--light">
+    <Icon name="moon" />
+  </span>
+</button>
+<button
+  type="button"
+  class="icon-btn"
+  data-pref="sound"
+  aria-pressed="false"
+  aria-label={t(locale, 'prefs.sound')}
+  title={t(locale, 'prefs.sound')}
+>
+  <span class="swap swap--sound-on">
+    <Icon name="sound" />
+  </span>
+  <span class="swap swap--sound-off">
+    <Icon name="sound-off" />
+  </span>
+</button>
+{reading && (
+  <button
+    type="button"
+    class="icon-btn"
+    data-pref="reading"
+    aria-pressed="false"
+    aria-label={t(locale, 'prefs.reading')}
+    title={t(locale, 'prefs.readingHint')}
+  >
+    <Icon name="book" />
+  </button>
+)}
