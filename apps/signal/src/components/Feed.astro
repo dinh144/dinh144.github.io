@@ -1,0 +1,73 @@
+---
+/**
+ * The stream as terminal output: a `$ ls --type=` filter prompt, then entries grouped under
+ * `── dd.mm.yyyy ──` day dividers.
+ */
+import { formatDate, t, type Locale } from '@blog/core/i18n';
+import type { Post } from '@blog/core/posts';
+import { paths } from '@blog/core/routes';
+import { c } from '../lib/copy';
+import PostRow from './PostRow.astro';
+
+interface Props {
+  locale: Locale;
+  posts: Post[];
+  active: 'all' | 'posts' | 'series' | 'notes' | 'links';
+  id?: string;
+}
+const { locale, posts, active, id } = Astro.props;
+
+const filters = [
+  { id: 'all', href: paths.home(locale), label: t(locale, 'nav.all') },
+  { id: 'posts', href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts') },
+  { id: 'series', href: paths.seriesList(locale), label: t(locale, 'nav.series') },
+  { id: 'notes', href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes') },
+  { id: 'links', href: paths.section(locale, 'links'), label: t(locale, 'nav.links') },
+] as const;
+
+const days: { key: string; date: Date; posts: Post[] }[] = [];
+for (const post of posts) {
+  const key = post.data.date.toISOString().slice(0, 10);
+  const last = days.at(-1);
+  if (last && last.key === key) last.posts.push(post);
+  else days.push({ key, date: post.data.date, posts: [post] });
+}
+const fill = '─'.repeat(160);
+---
+
+<section class="feed wrap" id={id} aria-label={t(locale, 'nav.all')}>
+  <nav class="ls" aria-label={c(locale, 'feed.type')}>
+    <span class="cmd" aria-hidden="true">
+      <span class="ps">$</span>ls --{c(locale, 'feed.type')}=
+    </span>
+    {filters.map((f) => (
+      <a href={f.href} aria-current={f.id === active ? 'page' : undefined}>
+        {f.label}
+      </a>
+    ))}
+  </nav>
+  <p class="keys">
+    <kbd>j</kbd> <kbd>k</kbd> {c(locale, 'keys.move')} · <kbd>/</kbd> {c(locale, 'keys.search')}
+  </p>
+  {posts.length ? (
+    <ol class="stream">
+      {days.map((day) => (
+        <li class="day">
+          <h2 class="divider" data-divider>
+            <span class="lead" aria-hidden="true" set:text="──" />
+            <time datetime={day.key}>{formatDate(day.date, locale, 'numeric')}</time>
+            <span class="line" aria-hidden="true" set:text={fill} />
+            {day.posts.length > 1 && <span class="count">{c(locale, 'feed.count', { n: day.posts.length })}</span>}
+          </h2>
+          <ol class="day-list">
+            {day.posts.map((post) => (
+              <PostRow post={post} />
+            ))}
+          </ol>
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <p class="empty">{t(locale, 'list.empty')}</p>
+  )}
+</section>

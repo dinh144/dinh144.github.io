@@ -1,0 +1,53 @@
+---
+/** Contents as `$ tree` output. Real list and links; the branch glyphs are decoration. */
+import type { MarkdownHeading } from 'astro';
+import { t, type Locale } from '@blog/core/i18n';
+
+interface Props {
+  locale: Locale;
+  headings: MarkdownHeading[];
+}
+const { locale, headings } = Astro.props;
+
+// Branch prefixes: an h2 is the last of its level when no later h2 follows; an h3 is last before the next h2.
+const items = headings.map((h, i) => {
+  const rest = headings.slice(i + 1);
+  if (h.depth === 2) {
+    const last = !rest.some((r) => r.depth === 2);
+    return { ...h, branch: last ? '└── ' : '├── ' };
+  }
+  const nextTop = rest.findIndex((r) => r.depth === 2);
+  const parentLast = nextTop === -1;
+  const siblings = nextTop === -1 ? rest : rest.slice(0, nextTop);
+  const last = !siblings.some((r) => r.depth === 3);
+  return { ...h, branch: `${parentLast ? '    ' : '│   '}${last ? '└── ' : '├── '}` };
+});
+---
+
+<details class="toc" open data-toc>
+  <summary>
+    <span class="ps" aria-hidden="true">
+      $
+    </span>
+    <span aria-hidden="true">tree</span>
+    <span class="sr-only">{t(locale, 'post.toc')}</span>
+    <span class="chev" aria-hidden="true">
+      ›
+    </span>
+  </summary>
+  <nav aria-label={t(locale, 'post.toc')}>
+    <p class="root" aria-hidden="true">
+      .
+    </p>
+    <ol>
+      {items.map((h) => (
+        <li>
+          <a href={`#${h.slug}`} data-toc-link={h.slug}>
+            <span class="branch" aria-hidden="true" set:text={h.branch} />
+            <span class="txt">{h.text}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+</details>

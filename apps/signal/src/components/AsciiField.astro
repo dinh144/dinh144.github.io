@@ -1,0 +1,75 @@
+---
+/**
+ * Host for the ASCII signal field. Paints a server-rendered still frame (<pre>) first; when motion is
+ * allowed the WebGL field mounts on top and the still fades out. Decorative: hidden from assistive tech
+ * and from the search index.
+ */
+import { asciiFrame, shapeFor, type ShapeName } from '../lib/ascii';
+
+interface Props {
+  variant: 'hero' | 'band' | 'bleed' | 'void';
+  seed: number;
+  shape?: ShapeName | 'morph' | 'none';
+  class?: string;
+}
+
+const { variant, seed, shape: shapeProp, class: extra } = Astro.props;
+const shape = shapeProp ?? shapeFor(seed);
+const stillShape: ShapeName = shape === 'morph' ? 'torus' : shape === 'none' ? shapeFor(seed) : shape;
+
+// Layout per variant: where the shape sits (fractions of the host) on wide and narrow screens.
+const layout = {
+  hero: { cx: 0.7, cy: 0.52, scale: 0.86, cxSm: 0.5, cySm: 0.7, scaleSm: 0.56, static: 0.03, alpha: 1 },
+  band: { cx: 0.78, cy: 0.5, scale: 1.2, cxSm: 0.66, cySm: 0.5, scaleSm: 1.15, static: 0.022, alpha: 0.9 },
+  // A list opener: the shape is huge and runs off the right edge, a close-up of the transmission.
+  bleed: { cx: 0.9, cy: 0.46, scale: 1.9, cxSm: 0.78, cySm: 0.5, scaleSm: 1.6, static: 0.03, alpha: 0.9 },
+  void: { cx: 0.5, cy: 0.5, scale: 0.8, cxSm: 0.5, cySm: 0.5, scaleSm: 0.8, static: 0.06, alpha: 1 },
+}[variant];
+
+const dims =
+  variant === 'band' || variant === 'bleed'
+    ? { wide: { cols: 190, rows: 34 }, narrow: { cols: 60, rows: 16 } }
+    : { wide: { cols: 190, rows: 66 }, narrow: { cols: 60, rows: 72 } };
+
+const still = (wide: boolean) => {
+  const d = wide ? dims.wide : dims.narrow;
+  if (shape === 'none') return asciiFrame({ ...d, shape: 'blob', seed, scale: 0.0001, static: 0.09 });
+  return asciiFrame({
+    ...d,
+    shape: stillShape,
+    seed,
+    centerX: wide ? layout.cx : layout.cxSm,
+    scale: wide ? layout.scale : layout.scaleSm,
+    static: layout.static,
+  });
+};
+// The still frame is anchored to the same centre as the live field, so the swap does not jump.
+const stillWide = still(true);
+const stillNarrow = still(false);
+---
+
+<div
+  class:list={['field', `field--${variant === 'bleed' ? 'band' : variant}`, extra]}
+  data-field
+  data-shape={shape}
+  data-seed={seed}
+  data-cx={layout.cx}
+  data-cy={layout.cy}
+  data-scale={layout.scale}
+  data-cx-sm={layout.cxSm}
+  data-cy-sm={layout.cySm}
+  data-scale-sm={layout.scaleSm}
+  data-static={layout.static}
+  data-alpha={layout.alpha}
+  aria-hidden="true"
+  data-pagefind-ignore
+  style={`--cx:${layout.cx};--cy:${layout.cy};--cx-sm:${layout.cxSm};--cy-sm:${layout.cySm}`}
+>
+  <pre class="field-still field-still--wide" set:text={stillWide} />
+  <pre class="field-still field-still--narrow" set:text={stillNarrow} />
+  <p class="hud" data-hud>
+    <span data-hud-shape>{shape === 'none' ? 'no carrier' : stillShape}</span>
+    <span data-hud-grid><span class="wide">{dims.wide.cols}×{dims.wide.rows}</span><span class="narrow">{dims.narrow.cols}×{dims.narrow.rows}</span></span>
+    <span data-hud-rate>still</span>
+  </p>
+</div>

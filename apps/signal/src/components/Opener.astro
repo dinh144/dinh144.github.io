@@ -1,0 +1,33 @@
+---
+/** Page opener: a band of the signal field above a decoding `#` title, an optional dek and a meta slot. */
+import type { ShapeName } from '../lib/ascii';
+import { hashString } from '../lib/copy';
+import AsciiField from './AsciiField.astro';
+
+interface Props {
+  title: string;
+  /** Seeds the field so every page gets its own transmission. */
+  seedKey: string;
+  shape?: ShapeName;
+  dek?: string;
+  lang?: string;
+  /** 'bleed' for list pages: a close-up of the shape running off the edge. */
+  composition?: 'band' | 'bleed';
+}
+const { title, seedKey, shape, dek, lang, composition = 'band' } = Astro.props;
+const seed = hashString(seedKey);
+---
+
+<header class="opener">
+  <AsciiField variant={composition} seed={seed} shape={shape} />
+  <div class="opener-copy wrap" lang={lang}>
+    <h1 class="page-title">
+      <span class="hash" aria-hidden="true">
+        #
+      </span>
+      <span data-decode>{title}</span>
+    </h1>
+    {dek && <p class="dek">{dek}</p>}
+    <slot />
+  </div>
+</header>

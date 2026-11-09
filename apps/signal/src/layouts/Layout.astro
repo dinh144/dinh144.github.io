@@ -1,0 +1,168 @@
+---
+import '@fontsource-variable/jetbrains-mono/wght.css';
+import '@fontsource/be-vietnam-pro/400.css';
+import '@fontsource/be-vietnam-pro/400-italic.css';
+import '@fontsource/be-vietnam-pro/600.css';
+import '@fontsource/be-vietnam-pro/700.css';
+import 'katex/dist/katex.min.css';
+import '../styles/global.css';
+import Analytics from '@blog/core/components/Analytics.astro';
+import PrefsInit from '@blog/core/components/PrefsInit.astro';
+import Seo from '@blog/core/components/Seo.astro';
+import { otherLocale, t, type Locale } from '@blog/core/i18n';
+import { paths, switchLocale, unlocalize } from '@blog/core/routes';
+import { SITE } from '@blog/core/site';
+import { ClientRouter } from 'astro:transitions';
+import StatusLine from '../components/StatusLine.astro';
+import { c } from '../lib/copy';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description?: string;
+  image?: string;
+  type?: 'website' | 'article';
+  published?: Date;
+  available?: Locale[];
+  /** Show the reading-mode toggle and progress (article pages). */
+  reading?: boolean;
+  noindex?: boolean;
+  /** 'lost' on the 404 page: the status line reports no signal. */
+  signal?: 'lost';
+}
+
+const { locale, reading = false, signal, ...seo } = Astro.props;
+const here = unlocalize(Astro.url.pathname);
+const other = otherLocale(locale);
+const otherHref =
+  seo.available && !seo.available.includes(other) ? paths.home(other) : switchLocale(Astro.url.pathname, other);
+const nav = [
+  { href: paths.section(locale, 'posts'), label: t(locale, 'nav.posts'), match: '/posts/' },
+  { href: paths.seriesList(locale), label: t(locale, 'nav.series'), match: '/series/' },
+  { href: paths.section(locale, 'notes'), label: t(locale, 'nav.notes'), match: '/notes/' },
+  { href: paths.section(locale, 'links'), label: t(locale, 'nav.links'), match: '/links/' },
+  { href: paths.about(locale), label: t(locale, 'nav.about'), match: '/about/' },
+];
+// The brand is a shell prompt whose working directory is the page you are on.
+const cwd = `~${here === '/' ? '' : here.replace(/\/$/, '')}`;
+
+// CRT power-off on the old page, power-on on the new one (see global.css keyframes).
+const crt = {
+  forwards: {
+    old: { name: 'crt-off', duration: '0.3s', easing: 'cubic-bezier(0.7, 0, 0.84, 0)', fillMode: 'both' },
+    new: {
+      name: 'crt-on',
+      duration: '0.46s',
+      delay: '0.22s',
+      easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      fillMode: 'both',
+    },
+  },
+  backwards: {
+    old: { name: 'crt-off', duration: '0.3s', easing: 'cubic-bezier(0.7, 0, 0.84, 0)', fillMode: 'both' },
+    new: {
+      name: 'crt-on',
+      duration: '0.46s',
+      delay: '0.22s',
+      easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+      fillMode: 'both',
+    },
+  },
+};
+---
+
+<!doctype html>
+<html lang={locale} transition:animate={crt}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0c0c0c" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%230c0c0c'/%3E%3Cpath d='M8 10l6 6-6 6' fill='none' stroke='%23f2b13c' stroke-width='3'/%3E%3Crect x='16' y='20' width='9' height='3' fill='%23f2b13c'/%3E%3C/svg%3E"
+    />
+    <PrefsInit />
+    <script is:inline>
+      // Third screen state (green phosphor) on top of core's light/dark: stored by this theme only.
+      (function () {
+        var s = '';
+        try {
+          s = localStorage.getItem('signal:screen') || '';
+        } catch (e) {}
+        if (s === 'phosphor') document.documentElement.dataset.screen = 'phosphor';
+      })();
+    </script>
+    <Seo locale={locale} {...seo} />
+    <ClientRouter />
+  </head>
+  <body data-reading-page={reading ? 'on' : 'off'} data-signal={signal}>
+    <a class="skip" href="#main">
+      {c(locale, 'skip')}
+    </a>
+    <header class="site-header">
+      <div class="wrap bar">
+        <a class="brand" href={paths.home(locale)} aria-label={`${SITE.name}, ${c(locale, 'home')}`}>
+          <span class="user">{SITE.name}</span>
+          <span class="sep" aria-hidden="true">
+            @
+          </span>
+          <span class="host" aria-hidden="true">
+            signal
+          </span>
+          <span class="sep" aria-hidden="true">
+            :
+          </span>
+          <span class="cwd" aria-hidden="true">
+            {cwd}
+          </span>
+          <span class="ps" aria-hidden="true">
+            $
+          </span>
+        </a>
+        <nav class="nav" aria-label={c(locale, 'mainNav')}>
+          {nav.map((item) => (
+            <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        <div class="tools">
+          <a class="tool" href={paths.search(locale)} aria-label={t(locale, 'nav.search')} data-search-link>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5"></circle>
+              <path d="M20 20l-4.2-4.2"></path>
+            </svg>
+            <span class="kbd" aria-hidden="true">
+              /
+            </span>
+          </a>
+          <a class="tool lang" href={otherHref} hreflang={other} lang={other} aria-label={t(locale, 'lang.switch')}>
+            {other}
+          </a>
+        </div>
+      </div>
+    </header>
+    <main id="main" data-pagefind-body>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>{t(locale, 'footer.license', SITE.license)}</span>
+        <nav aria-label="Footer">
+          <a href={paths.rss(locale)}>rss</a>
+          <a href={paths.tags(locale)}>{t(locale, 'nav.tags').toLowerCase()}</a>
+          <a href={SITE.github}>github</a>
+        </nav>
+        <span class="eof" aria-hidden="true">
+          [EOF]
+        </span>
+      </div>
+    </footer>
+    <StatusLine locale={locale} reading={reading} cwd={cwd} />
+    <div class="sweep" aria-hidden="true"></div>
+    <Analytics locale={locale} />
+    <script>
+      import '../scripts/signal';
+    </script>
+  </body>
+</html>

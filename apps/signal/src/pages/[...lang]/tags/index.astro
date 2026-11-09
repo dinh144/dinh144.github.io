@@ -1,0 +1,62 @@
+---
+import { t, type Locale } from '@blog/core/i18n';
+import { getPosts, tagsOf } from '@blog/core/posts';
+import { localePaths, paths } from '@blog/core/routes';
+import Opener from '../../../components/Opener.astro';
+import Layout from '../../../layouts/Layout.astro';
+import { c } from '../../../lib/copy';
+
+export const getStaticPaths = () => localePaths();
+
+const { locale } = Astro.props as { locale: Locale };
+const tags = tagsOf(await getPosts(locale));
+const max = Math.max(1, ...tags.map((tag) => tag.count));
+const width = 24;
+---
+
+<Layout locale={locale} title={t(locale, 'tags.title')}>
+  <Opener title={t(locale, 'tags.title')} seedKey="tags-index" shape="octa" composition="bleed">
+    <p class="meta">
+      <span>
+        {tags.length} {t(locale, 'tags.title').toLowerCase()}
+      </span>
+    </p>
+  </Opener>
+  <section class="wrap feed">
+    <table class="tag-table">
+      <thead>
+        <tr>
+          <th scope="col">{t(locale, 'tags.title')}</th>
+          <th scope="col" class="n">
+            {c(locale, 'tags.posts')}
+          </th>
+          <th scope="col">
+            <span class="sr-only">{c(locale, 'tags.posts')}</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {tags.map((tag) => {
+          const filled = Math.max(1, Math.round((tag.count / max) * width));
+          return (
+            <tr>
+              <td>
+                <a href={paths.tag(locale, tag.name)}>
+                  <span class="br" aria-hidden="true">
+                    #
+                  </span>
+                  {tag.name}
+                </a>
+              </td>
+              <td class="n">{tag.count}</td>
+              <td class="bar" aria-hidden="true">
+                <span set:text={'█'.repeat(filled)} />
+                <span class="rest" set:text={'░'.repeat(width - filled)} />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </section>
+</Layout>
