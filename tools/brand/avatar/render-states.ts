@@ -1,0 +1,11 @@
+import { deanSvg, deanFavicon, EXPRESSIONS, ACTIONS, type DeanState } from './deanframe.ts';
+const out = process.argv[2];
+const def = await Bun.file(new URL('./dean.json', import.meta.url)).json();
+const exprs = Object.keys(EXPRESSIONS) as DeanState[];
+const acts = Object.keys(ACTIONS) as DeanState[];
+const pick: Record<string, number> = { done: 0.25, error: 0.1, alert: 0.35, notify: 0.15, affirm: 0.11, refuse: 0.11, poke: 0.2, wake: 0.9, listening: 0.4, thinking: 1.4, waiting: 0.6, orbit: 0.4, burst: 0.45, comet: 0.9, egg: 0.5, hexagon: 1.2, play: 0.25 };
+for (const s of exprs) await Bun.write(`${out}/e-${s}.svg`, deanSvg({ definition: def, state: s, time: 1.2, size: 200 }));
+for (const s of acts) await Bun.write(`${out}/a-${s}.svg`, deanSvg({ definition: def, state: s, time: pick[s] ?? 1, size: 200 }));
+await Bun.write(`${out}/dark-idle.svg`, deanSvg({ definition: def, state: 'idle', time: 1.2, theme: 'dark', size: 200 }));
+await Bun.write(`${out}/fav.svg`, deanFavicon(def)); await Bun.write(`${out}/fav-dark.svg`, deanFavicon(def, 'dark'));
+console.log(exprs.length, acts.length);
