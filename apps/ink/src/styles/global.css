@@ -243,26 +243,6 @@ button {
   font: 800 1.25rem/1 var(--f-display);
   letter-spacing: -0.03em;
 }
-.seal {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 3px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font: 800 1.25rem/1 var(--f-display);
-  letter-spacing: 0;
-  transform: rotate(-3deg);
-  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent-ink) 22%, transparent);
-  transition: transform 0.5s var(--ease-ink);
-}
-.seal span {
-  transform: translateY(-1px);
-}
-.brand:hover .seal {
-  transform: rotate(2deg) scale(1.06);
-}
 .nav {
   display: flex;
   gap: 0 4px;
@@ -513,22 +493,6 @@ button {
 }
 :root[data-motion='full'] :is(.hero-no, .post-no) {
   animation: no-hang 1.1s var(--ease-ink) 0.45s both;
-}
-@keyframes seal-stamp {
-  0% {
-    transform: rotate(-3deg) scale(1.35);
-    opacity: 0;
-  }
-  45% {
-    opacity: 1;
-    transform: rotate(-3deg) scale(0.94);
-  }
-  100% {
-    transform: rotate(-3deg) scale(1);
-  }
-}
-:root[data-motion='full'][data-page='home'] .seal {
-  animation: seal-stamp 0.7s var(--ease-drop) 0.15s both;
 }
 
 /* ---------- page head (lists, series, tags, about, search) ---------- */

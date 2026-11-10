@@ -1,4 +1,6 @@
 ---
+import DeanLogo from '@blog/core/components/DeanLogo.astro';
+import { deanFaviconHref } from '@blog/core/brand/logo';
 import '@fontsource/be-vietnam-pro/latin-500.css';
 import '@fontsource/be-vietnam-pro/vietnamese-500.css';
 import '@fontsource/be-vietnam-pro/latin-700.css';
@@ -36,9 +38,11 @@ interface Props {
   noindex?: boolean;
   /** Page kind: tunes the ink field (home blooms, articles keep ink in the margins). */
   page?: 'home' | 'post' | 'list' | 'page';
+  /** Base state of the header logo: 'confused' on the 404 page. */
+  logoState?: 'idle' | 'confused';
 }
 
-const { locale, reading = false, page = 'page', ...seo } = Astro.props;
+const { locale, reading = false, page = 'page', logoState = 'idle', ...seo } = Astro.props;
 const here = unlocalize(Astro.url.pathname);
 const other = otherLocale(locale);
 const otherHref =
@@ -63,10 +67,7 @@ const signOff =
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#120e0f" media="(prefers-color-scheme: dark)" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='4' fill='%23a50e1a' transform='rotate(-3 16 16)'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='800' font-size='20' text-anchor='middle' fill='%23fbf6ef'%3E%C4%91%3C/text%3E%3C/svg%3E"
-    />
+    <link rel="icon" type="image/svg+xml" href={deanFaviconHref()} />
     <link rel="preload" href={bvpViet800} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={bvpLatin800} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={literataLatin} as="font" type="font/woff2" crossorigin />
@@ -87,12 +88,9 @@ const signOff =
     )}
     <div class="wrap">
       <header class="masthead" data-resist>
-        <a class="brand" href={paths.home(locale)}>
-          <span class="seal" aria-hidden="true">
-            <span>đ</span>
-          </span>
+        <DeanLogo class="brand" locale={locale} href={paths.home(locale)} state={logoState} size={48}>
           <span class="brand-word">{SITE.name}</span>
-        </a>
+        </DeanLogo>
         <nav class="nav" aria-label={locale === 'vi' ? 'Chính' : 'Main'}>
           {nav.map((item) => (
             <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>
