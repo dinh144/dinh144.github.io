@@ -6,6 +6,8 @@
  * loads the renderer lazily and runs the states (see that file). Hovering or focusing shows a short mono label with
  * the current state; the accessible name is "<site name> · home" in the page language.
  *
+ * Children replace the default wordmark, so a theme can keep its own name treatment next to the mark.
+ *
  * Theme hooks (CSS custom properties on .dean-logo or any ancestor):
  *   --dean-gap, --dean-word-size, --dean-word-weight, --dean-word-font, --dean-tip-bg, --dean-tip-fg, --dean-tip-font
  */
@@ -58,7 +60,7 @@ const status = state === 'confused' ? labels.lost : labels.watching;
     style={`width:${size}px;height:${size}px;margin:${-Math.round(size * 0.22)}px ${-Math.round(size * 0.1)}px`}
     set:html={deanStill(state, size)}
   />
-  {wordmark && <span class="dean-logo__word">{SITE.name}</span>}
+  <slot>{wordmark && <span class="dean-logo__word">{SITE.name}</span>}</slot>
   <span class="dean-logo__tip" aria-hidden="true">
     {status} · {labels.home}
   </span>

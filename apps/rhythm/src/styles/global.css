@@ -265,27 +265,6 @@ p {
   font-stretch: 112%;
   letter-spacing: -0.02em;
 }
-.brand-mark {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 18px;
-}
-.brand-mark i {
-  display: block;
-  width: 4px;
-  background: var(--ink);
-}
-.brand-mark i:nth-child(1) {
-  height: 18px;
-  background: var(--accent);
-}
-.brand-mark i:nth-child(2) {
-  height: 12px;
-}
-.brand-mark i:nth-child(3) {
-  height: 7px;
-}
 .nav {
   order: 3;
   flex: 1 1 100%;
