@@ -2,9 +2,11 @@
 import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 import Analytics from '@blog/core/components/Analytics.astro';
+import DeanLogo from '@blog/core/components/DeanLogo.astro';
 import PrefsInit from '@blog/core/components/PrefsInit.astro';
 import Seo from '@blog/core/components/Seo.astro';
 import { otherLocale, t, type Locale } from '@blog/core/i18n';
+import { deanFaviconHref } from '@blog/core/brand/logo';
 import { paths, switchLocale, unlocalize } from '@blog/core/routes';
 import { SITE } from '@blog/core/site';
 import { ClientRouter } from 'astro:transitions';
@@ -21,9 +23,11 @@ interface Props {
   /** Show the reading-mode toggle (article pages). */
   reading?: boolean;
   noindex?: boolean;
+  /** Base state of the header logo: 'confused' on the 404 page. */
+  logoState?: 'idle' | 'confused';
 }
 
-const { locale, reading = false, ...seo } = Astro.props;
+const { locale, reading = false, logoState = 'idle', ...seo } = Astro.props;
 const here = unlocalize(Astro.url.pathname);
 const other = otherLocale(locale);
 const otherHref =
@@ -42,10 +46,7 @@ const nav = [
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2316181d'/%3E%3C/svg%3E"
-    />
+    <link rel="icon" type="image/svg+xml" href={deanFaviconHref()} />
     <PrefsInit />
     <Seo locale={locale} {...seo} />
     <ClientRouter />
@@ -56,9 +57,7 @@ const nav = [
     </a>
     <div class="wrap">
       <header class="site-header">
-        <a class="brand" href={paths.home(locale)}>
-          {SITE.name}
-        </a>
+        <DeanLogo class="brand" locale={locale} href={paths.home(locale)} state={logoState} />
         <nav class="nav" aria-label={locale === 'vi' ? 'Chính' : 'Main'}>
           {nav.map((item) => (
             <a href={item.href} aria-current={here.startsWith(item.match) ? 'page' : undefined}>

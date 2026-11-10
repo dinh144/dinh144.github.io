@@ -354,13 +354,13 @@ export interface DeanFrameInput {
   still?: boolean;
   size?: number;
   title?: string;
-  /** frame colour of the glasses; default = the eye colour (paper on the ink body, ink on the light body) */
+  /** Glasses frame colour; no glasses unless set. */
   glassesColor?: string;
-  /** body fill; default ink (light theme) or paper (dark theme) */
+  /** Body fill; default the library's orange ORANGE. */
   bodyColor?: string;
-  /** pupils and eye marks */
+  /** Pupils and eye marks; default INK. */
   eyeColor?: string;
-  /** silhouette outline colour (needed when the body is light on a light page) */
+  /** Silhouette outline colour; no outline unless set. */
   outline?: string;
 }
 
