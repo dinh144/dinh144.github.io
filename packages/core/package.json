@@ -14,8 +14,10 @@
     "./rss": "./src/rss.ts",
     "./og": "./src/og.ts",
     "./markdown": "./src/markdown.ts",
+    "./brand/logo": "./src/brand/logo.ts",
     "./client/preferences": "./src/client/preferences.ts",
     "./client/sound": "./src/client/sound.ts",
+    "./client/dean-logo": "./src/client/dean-logo.ts",
     "./components/*": "./src/components/*"
   },
   "dependencies": {

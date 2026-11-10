@@ -1,4 +1,6 @@
 ---
+import DeanLogo from '@blog/core/components/DeanLogo.astro';
+import { deanFaviconHref } from '@blog/core/brand/logo';
 import '@fontsource-variable/mona-sans/standard.css';
 import '@fontsource-variable/inter/index.css';
 import '@fontsource/ibm-plex-mono/400.css';
@@ -30,9 +32,11 @@ interface Props {
   noindex?: boolean;
   /** Page kind, used by the motion layer to pick its choreography. */
   kind?: 'home' | 'list' | 'article' | 'page';
+  /** Base state of the header logo: 'confused' on the 404 page. */
+  logoState?: 'idle' | 'confused';
 }
 
-const { locale, reading = false, kind = 'page', ...seo } = Astro.props;
+const { locale, reading = false, kind = 'page', logoState = 'idle', ...seo } = Astro.props;
 const here = unlocalize(Astro.url.pathname);
 const other = otherLocale(locale);
 const otherHref =
@@ -65,10 +69,7 @@ const wordmark = [...SITE.name];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b0d10" media="(prefers-color-scheme: dark)" />
-    <link
-      rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230E1116'/%3E%3Crect x='6' y='8' width='4' height='16' fill='%233B3BE8'/%3E%3Crect x='14' y='12' width='4' height='12' fill='%23fff'/%3E%3Crect x='22' y='16' width='4' height='8' fill='%23fff'/%3E%3C/svg%3E"
-    />
+    <link rel="icon" type="image/svg+xml" href={deanFaviconHref()} />
     <link rel="preload" as="font" type="font/woff2" href={monaLatin} crossorigin />
     {locale === 'vi' && <link rel="preload" as="font" type="font/woff2" href={monaViet} crossorigin />}
     <PrefsInit />
@@ -89,14 +90,9 @@ const wordmark = [...SITE.name];
     </div>
     <header class="site-header" transition:name="site-header" transition:animate="none">
       <div class="frame grid header-grid">
-        <a class="brand" href={paths.home(locale)} aria-label={`${SITE.name}, ${t(locale, 'nav.all')}`}>
-          <span class="brand-mark" aria-hidden="true">
-            <i></i>
-            <i></i>
-            <i></i>
-          </span>
+        <DeanLogo class="brand" locale={locale} href={paths.home(locale)} state={logoState} size={48}>
           <span class="brand-name">{SITE.name}</span>
-        </a>
+        </DeanLogo>
         <nav class="nav" aria-label={c(locale, 'mainNav')}>
           <ul>
             {nav.map((item) => (

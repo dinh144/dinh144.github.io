@@ -265,27 +265,6 @@ p {
   font-stretch: 112%;
   letter-spacing: -0.02em;
 }
-.brand-mark {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 18px;
-}
-.brand-mark i {
-  display: block;
-  width: 4px;
-  background: var(--ink);
-}
-.brand-mark i:nth-child(1) {
-  height: 18px;
-  background: var(--accent);
-}
-.brand-mark i:nth-child(2) {
-  height: 12px;
-}
-.brand-mark i:nth-child(3) {
-  height: 7px;
-}
 .nav {
   order: 3;
   flex: 1 1 100%;
@@ -1687,8 +1666,8 @@ html:not(.is-kinetic) .metro {
   display: inline-block;
   margin: 1rem 0 0;
   font: 700 min(20vw, 18rem) / 0.8 var(--display);
-  /* "dinh144" is 3.63em wide at rest: fill the frame exactly. */
-  font-size: calc(100cqi / 3.66);
+  /* "dean" is 2.06em wide at rest: fill the frame exactly. */
+  font-size: calc(100cqi / 2.09);
   font-stretch: 100%;
   letter-spacing: -0.035em;
   white-space: nowrap;

@@ -8,6 +8,14 @@ mcpServers:
       type: stdio
       command: npx
       args: ["-y", "@playwright/mcp@0.0.84", "--headless", "--isolated", "--no-sandbox", "--browser", "chromium", "--executable-path", "/usr/bin/chromium"]
+  - awwwards:
+      type: stdio
+      command: npx
+      args: ["-y", "-p", "awwwards-mcp@1.18.0", "-p", "playwright@1.64.0", "-p", "ffmpeg-static@5.3.0", "awwwards-mcp"]
+      env:
+        NODE_USE_ENV_PROXY: "1"
+        FFMPEG_BIN: "ffmpeg"
+        AWWWARDS_MCP_IMAGE_RETENTION_DAYS: "30"
   - ui-skills:
       type: http
       url: https://www.ui-skills.com/mcp
@@ -23,7 +31,8 @@ The prompt names the theme (`ink`, `signal`, `rhythm` or `constellation`) and th
 1. Read the concept brief at `docs/concepts/<name>.md` and the rules in the root `CLAUDE.md`.
 2. Build and capture it: `node scripts/verify-theme.mjs <name>` (it builds, serves `dist/` under `/lab/<name>/`, and writes screenshots + a JSON report to `apps/<name>/.verify/`). Read the screenshots; they are the evidence.
 3. Use Playwright for anything the screenshots cannot show: scroll the home page and an article, toggle the theme, turn on reading mode, emulate `prefers-reduced-motion: reduce`, open the menu at 390 px, tab through the page and check focus.
-4. Critique using the skills in `tools/claude/skills/` (read `impeccable` (critique + Read mode), `better-accessibility`, `web-quality-audit` and `performance` first).
+4. Compare against real references with the `awwwards` MCP (skills `awwwards-inspiration`, `awwwards-motion-study`): pull jury scores with `compare_sites`, record a reference's motion with `record_site_motion`, and run `analyze_page_structure` / `analyze_scroll_map` on the theme's local build.
+5. Critique using the skills in `tools/claude/skills/` (read `impeccable` (critique + Read mode), `better-accessibility`, `web-quality-audit` and `performance` first).
 
 ## Report (keep under 500 words)
 - Awwwards-style scores (0-10, one decimal) for Design (40%), Usability (30%), Creativity (20%), Content (10%),

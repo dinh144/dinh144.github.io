@@ -1,3 +1,21 @@
+# Update 2026-11-09 evening (session paused by the owner)
+
+- rhythm re-review DONE: **7.63** (D 7.7 / U 7.5 / C 8.0 / N 7.0). Fixes, most severe first:
+  1. Header collision 1024 to ~1290 px: `.metro` (cols 9-10) prints over `.tools` (5×44 px spills left), global.css ~494-505 → `.header-grid { grid-template-columns: auto 1fr auto auto }` or hide `.metro-unit` + beat squares < 1300 px.
+  2. Footnote links dead on phones with motion on: Lenis anchors (motion.ts ~484/525) swallow the jump → handle `a[data-footnote-ref]`/`[data-footnote-backref]` with `lenis.scrollTo(target)`.
+  3. Fixed `.lens` at 46vh strikes through the hero h1 on load → fade it in once the first score row reaches it.
+  4. Code-block contrast: comment 4.38/3.73, `const` 4.16 on `--tint` → comment #57606a/#8b949e, keyword #cf222e (global.css ~1391).
+  5. Reading-mode switch only renders on articles, so it cannot be turned off elsewhere → always render it while reading is on.
+  6. 360 px header is 3 rows (141 px) → put the metronome inside `.tools` below 400 px.
+  7. Minor: footnote ref/backref hit areas (pad via pseudo-element), tempo button name omits "096", TOC wraps at 1024.
+  8. Creativity +1: neighbouring titles should yield when one stretches (brief asks for it). Content: per-locale tag names.
+- 2nd passes PAUSED mid-work, each as an unverified WIP commit (branches pushed to origin):
+  - constellation: branch `worktree-agent-a974c1cb6145d03f5` @ `7c3805a` (includes the older WIP 9007161; was rewriting the stage section of app.ts, added apps/constellation/scripts/check-labels.mjs).
+  - signal: branch `worktree-agent-a6726bb07f1d52959` @ `7c018f1` (engine/shaders/effects/CSS edits started; was about to apply the CSS fixes).
+  - ink: branch `worktree-agent-a0edc04ceaa9a799a` @ `8211a55` (WIP 91c9ebf merged with main; ink-field.ts + CSS edits; was reviewing early screenshots).
+  The older worktree branches listed below are superseded by these.
+- Deeper reference research was started (SOTY/SOTM, top personal SOTD, awarded editorial sites, craft-led dev blogs; target 20-30 new references) and stopped before any notes were written. Restart it; output goes to docs/research/. Existing source list: docs/research/sources.md.
+
 # Handoff — design lab (stopped 2026-11-09, ~17:15)
 
 Goal from the owner: **"as premium as possible, no budget"** (Awwwards Site-of-the-Day bar), immersive on

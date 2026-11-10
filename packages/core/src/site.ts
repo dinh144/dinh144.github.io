@@ -1,10 +1,10 @@
 /**
  * Site-wide settings shared by the hub and every theme.
- * The blog name is still a placeholder: it gets picked after the design concept.
+ * The blog is called "dean" (reads like "Đinh"); the author and the GitHub handle stay dinh144.
  */
 export const SITE = {
   origin: 'https://dinh144.github.io',
-  name: 'dinh144',
+  name: 'dean',
   author: 'dinh144',
   github: 'https://github.com/dinh144',
   repo: 'dinh144/dinh144.github.io',

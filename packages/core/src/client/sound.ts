@@ -1,7 +1,7 @@
 /**
  * Interaction sounds synthesised with Web Audio: no audio files, nothing autoplays.
  * Every call is a no-op unless the reader switched sound on (data-sound="on").
- * Themes may pass their own recipe; the built-ins are a soft tick, a paper turn and an ink drop.
+ * Themes may pass their own recipe; the built-ins are a soft tick, a paper turn, an ink drop and a blip.
  */
 let ctx: AudioContext | undefined;
 
@@ -67,4 +67,17 @@ export function drop() {
   osc.connect(envelope(ac, 0.06, 0.005, 0.3));
   osc.start();
   osc.stop(ac.currentTime + 0.35);
+}
+
+/** Two-step rising blip, short and quiet; for the logo's happy hop. */
+export function blip() {
+  const ac = audio();
+  if (!ac) return;
+  const osc = ac.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(660, ac.currentTime);
+  osc.frequency.setValueAtTime(990, ac.currentTime + 0.06);
+  osc.connect(envelope(ac, 0.045, 0.004, 0.14));
+  osc.start();
+  osc.stop(ac.currentTime + 0.2);
 }

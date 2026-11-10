@@ -1,0 +1,136 @@
+---
+/**
+ * The dean logo: the animated Cloud mark (plus the site name) as the link home.
+ *
+ * Ships a still SVG, so it renders before any script and stays still without JavaScript. client/dean-logo.ts then
+ * loads the renderer lazily and runs the states (see that file). Hovering or focusing shows a short mono label with
+ * the current state; the accessible name is "<site name> · home" in the page language.
+ *
+ * Children replace the default wordmark, so a theme can keep its own name treatment next to the mark.
+ *
+ * Theme hooks (CSS custom properties on .dean-logo or any ancestor):
+ *   --dean-gap, --dean-word-size, --dean-word-weight, --dean-word-font, --dean-tip-bg, --dean-tip-fg, --dean-tip-font
+ */
+import { deanStill } from '../brand/logo';
+import { t, type Locale } from '../i18n';
+import { SITE } from '../site';
+
+interface Props {
+  locale: Locale;
+  href: string;
+  /** Base state of this page: 'confused' on 404 pages. */
+  state?: 'idle' | 'confused';
+  /** Mark box in px. The cloud fills about two thirds of it (the rest is room for decor such as "z z"); the
+   * spare room is pulled in with negative margins, so the cloud itself is about 0.66 × size wide. */
+  size?: number;
+  /** Show the site name next to the mark. */
+  wordmark?: boolean;
+  class?: string;
+}
+
+const { locale, href, state = 'idle', size = 56, wordmark = true, class: className } = Astro.props;
+const labels = {
+  home: t(locale, 'logo.home'),
+  watching: t(locale, 'logo.watching'),
+  loading: t(locale, 'logo.loading'),
+  done: t(locale, 'logo.done'),
+  lost: t(locale, 'logo.lost'),
+  asleep: t(locale, 'logo.asleep'),
+};
+const status = state === 'confused' ? labels.lost : labels.watching;
+---
+
+<a
+  class:list={['dean-logo', className]}
+  href={href}
+  aria-label={`${SITE.name} · ${labels.home}`}
+  data-dean
+  data-state={state}
+  data-size={size}
+  data-l-home={labels.home}
+  data-l-watching={labels.watching}
+  data-l-loading={labels.loading}
+  data-l-done={labels.done}
+  data-l-lost={labels.lost}
+  data-l-asleep={labels.asleep}
+>
+  <span
+    class="dean-logo__mark"
+    aria-hidden="true"
+    style={`width:${size}px;height:${size}px;margin:${-Math.round(size * 0.22)}px ${-Math.round(size * 0.1)}px`}
+    set:html={deanStill(state, size)}
+  />
+  <slot>{wordmark && <span class="dean-logo__word">{SITE.name}</span>}</slot>
+  <span class="dean-logo__tip" aria-hidden="true">
+    {status} · {labels.home}
+  </span>
+</a>
+
+<style>
+  .dean-logo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dean-gap, 8px);
+    min-height: 44px;
+    min-width: 44px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .dean-logo__mark {
+    display: block;
+    flex: none;
+  }
+  .dean-logo__mark :global(svg) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .dean-logo__word {
+    font-family: var(--dean-word-font, inherit);
+    font-size: var(--dean-word-size, 1.25rem);
+    font-weight: var(--dean-word-weight, 700);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .dean-logo__tip {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10;
+    margin-top: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--dean-tip-bg, #1a1a1a);
+    color: var(--dean-tip-fg, #ffffff);
+    font: 500 12px/1.3 var(--dean-tip-font, ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-2px);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+  .dean-logo:hover .dean-logo__tip,
+  .dean-logo:focus-visible .dean-logo__tip {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dean-logo__tip {
+      transition: none;
+      transform: none;
+    }
+  }
+  :global(html[data-motion='reduce']) .dean-logo__tip {
+    transition: none;
+    transform: none;
+  }
+</style>
+
+<script>
+  import { initDeanLogo } from '../client/dean-logo';
+  initDeanLogo();
+</script>

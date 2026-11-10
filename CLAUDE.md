@@ -8,8 +8,8 @@ moves to the site root and the rest get deleted.
 - `content/` – the only content. `posts/{vi,en}/<slug>.md` (same slug = same post), `series/<id>.yml`,
   `pages/{vi,en}/about.md`, `media/` (CMS uploads, served at `/media/`). Edited by humans and Sveltia CMS.
 - `packages/core` (`@blog/core`) – schema, collections, i18n strings, routes/paths, post queries, RSS, OG images,
-  Markdown pipeline (KaTeX + dual Shiki), client preferences + sound, and shared components (Seo, PrefsInit,
-  Giscus, Analytics, Search). Themes import from here; they never duplicate it.
+  Markdown pipeline (KaTeX + dual Shiki), client preferences + sound, the dean logo (`brand/`: Open Bot Avatar Cloud + 41 states), and shared components
+  (Seo, PrefsInit, Giscus, Analytics, Search, DeanLogo). Themes import from here; they never duplicate it.
 - `apps/hub` – site root during the lab: lab index, Sveltia CMS at `/admin/` (config in `public/admin/config.yml`).
 - `apps/base` – reference theme: every route and feature, plain styling. New themes start as a copy of it.
 - `apps/<concept>` – concept themes `ink`, `signal`, `rhythm`, `constellation`, each served at `/lab/<concept>/`.
